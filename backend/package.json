@@ -6,9 +6,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon app.js"
   },
-  "author": "",
+  "author": "Allan Gautam",
   "license": "ISC",
-  "description": "",
+  "description": "Backend for my web application",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
