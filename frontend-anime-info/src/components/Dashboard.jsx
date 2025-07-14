@@ -41,7 +41,6 @@ const Dashboard = () => {
           "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
       }}
     >
-      {/* Background Animation - Enhanced visibility */}
       <div className="absolute inset-0 overflow-hidden">
         <div
           className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full blur-3xl animate-pulse"
@@ -66,7 +65,7 @@ const Dashboard = () => {
         ></div>
       </div>
 
-      {/* Main Content - Full width layout */}
+      {/* Main Content */}
       <main className="w-full px-6 lg:px-8 py-8 relative z-10">
         {/* Welcome Section */}
         <div className="mb-16">
@@ -79,7 +78,7 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Quick Stats - Better spacing */}
+          {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 max-w-6xl mx-auto">
             <div
               className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
@@ -113,7 +112,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Featured Anime - Enhanced layout */}
+          {/* Featured Anime */}
           <div className="mb-20">
             <h3 className="text-3xl font-bold text-white mb-8 text-center">
               Featured Anime
@@ -164,7 +163,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Quick Actions - Enhanced layout */}
+          {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <Link
               to="/search"
