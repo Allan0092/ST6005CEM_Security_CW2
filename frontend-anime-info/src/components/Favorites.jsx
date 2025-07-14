@@ -38,18 +38,55 @@ const Favorites = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div
+      className="min-h-screen"
+      style={{
+        background:
+          "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
+      }}
+    >
+      {/* Enhanced Background Animation */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full blur-3xl animate-pulse"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(100, 116, 139, 0.3) 0%, rgba(71, 85, 105, 0.15) 100%)",
+          }}
+        ></div>
+        <div
+          className="absolute -bottom-1/2 -right-1/2 w-full h-full rounded-full blur-3xl animate-pulse delay-1000"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(148, 163, 184, 0.25) 0%, rgba(100, 116, 139, 0.12) 100%)",
+          }}
+        ></div>
+        <div
+          className="absolute top-1/3 left-1/3 w-80 h-80 rounded-full blur-3xl animate-pulse delay-500"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(71, 85, 105, 0.2) 0%, rgba(51, 65, 85, 0.1) 100%)",
+          }}
+        ></div>
+      </div>
+
       {/* Header */}
-      <div className="bg-black/20 backdrop-blur-lg border-b border-white/10 p-4">
+      <div
+        className="backdrop-blur-lg border-b p-4 relative z-10"
+        style={{
+          backgroundColor: "rgba(71, 85, 105, 0.15)",
+          borderColor: "rgba(148, 163, 184, 0.2)",
+        }}
+      >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link
             to="/dashboard"
-            className="inline-flex items-center text-gray-400 hover:text-white transition-colors"
+            className="inline-flex items-center text-slate-400 hover:text-white transition-colors"
           >
             <FaArrowLeft className="mr-2" />
             Back to Dashboard
           </Link>
-          <h1 className="text-2xl font-bold text-white flex items-center">
+          <h1 className="text-2xl font-bold flex items-center bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent">
             <FaHeart className="text-red-400 mr-2" />
             My Favorites
           </h1>
@@ -58,32 +95,38 @@ const Favorites = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6 relative z-10">
         {favorites.length > 0 ? (
           <>
             {/* Stats */}
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-6 mb-8">
+            <div
+              className="backdrop-blur-lg border rounded-xl p-6 mb-8"
+              style={{
+                backgroundColor: "rgba(71, 85, 105, 0.15)",
+                border: "1px solid rgba(148, 163, 184, 0.25)",
+              }}
+            >
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                 <div>
                   <div className="text-3xl font-bold text-red-400 mb-2">
                     {favorites.length}
                   </div>
-                  <div className="text-gray-300">Total Favorites</div>
+                  <div className="text-slate-300">Total Favorites</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-yellow-400 mb-2">
+                  <div className="text-3xl font-bold text-amber-400 mb-2">
                     {(
                       favorites.reduce((sum, anime) => sum + anime.rating, 0) /
                       favorites.length
                     ).toFixed(1)}
                   </div>
-                  <div className="text-gray-300">Average Rating</div>
+                  <div className="text-slate-300">Average Rating</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-blue-400 mb-2">
+                  <div className="text-3xl font-bold text-slate-300 mb-2">
                     {new Set(favorites.map((anime) => anime.year)).size}
                   </div>
-                  <div className="text-gray-300">Different Years</div>
+                  <div className="text-slate-300">Different Years</div>
                 </div>
               </div>
             </div>
@@ -93,7 +136,11 @@ const Favorites = () => {
               {favorites.map((anime) => (
                 <div
                   key={anime.id}
-                  className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300 group"
+                  className="backdrop-blur-lg border rounded-xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300 group"
+                  style={{
+                    backgroundColor: "rgba(71, 85, 105, 0.15)",
+                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                  }}
                 >
                   <div className="relative">
                     <img
@@ -110,8 +157,11 @@ const Favorites = () => {
                         <FaTrash />
                       </button>
                     </div>
-                    <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-lg text-sm flex items-center">
-                      <FaStar className="text-yellow-400 mr-1" />
+                    <div
+                      className="absolute top-2 right-2 text-white px-2 py-1 rounded-lg text-sm flex items-center"
+                      style={{ backgroundColor: "rgba(32, 31, 49, 0.8)" }}
+                    >
+                      <FaStar className="text-amber-400 mr-1" />
                       {anime.rating}
                     </div>
                     <div className="absolute top-2 left-2">
@@ -122,9 +172,9 @@ const Favorites = () => {
                     <h3 className="text-lg font-semibold text-white mb-2">
                       {anime.title}
                     </h3>
-                    <p className="text-gray-400 text-sm mb-1">{anime.genre}</p>
-                    <p className="text-gray-500 text-sm mb-2">{anime.year}</p>
-                    <p className="text-gray-600 text-xs">
+                    <p className="text-slate-300 text-sm mb-1">{anime.genre}</p>
+                    <p className="text-slate-400 text-sm mb-2">{anime.year}</p>
+                    <p className="text-slate-500 text-xs">
                       Added: {new Date(anime.dateAdded).toLocaleDateString()}
                     </p>
                   </div>
@@ -135,11 +185,11 @@ const Favorites = () => {
         ) : (
           /* Empty State */
           <div className="text-center py-20">
-            <div className="text-8xl text-gray-600 mb-6">💔</div>
+            <div className="text-8xl text-slate-600 mb-6">💔</div>
             <h2 className="text-3xl font-bold text-white mb-4">
               No favorites yet
             </h2>
-            <p className="text-gray-400 mb-8 max-w-md mx-auto">
+            <p className="text-slate-400 mb-8 max-w-md mx-auto">
               Start adding your favorite anime to build your personal
               collection. You can add favorites from the search page or
               dashboard.
@@ -147,14 +197,19 @@ const Favorites = () => {
             <div className="space-y-4">
               <Link
                 to="/search"
-                className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105"
+                className="inline-block font-semibold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 text-white"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+                  boxShadow: "0 10px 25px rgba(100, 116, 139, 0.3)",
+                }}
               >
                 Discover Anime
               </Link>
               <div className="block">
                 <Link
                   to="/dashboard"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-slate-400 hover:text-white transition-colors"
                 >
                   Go back to Dashboard
                 </Link>

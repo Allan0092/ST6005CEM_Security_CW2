@@ -42,27 +42,27 @@ const Login = () => {
           "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
       }}
     >
-      {/* Background Animation */}
+      {/* Enhanced Background Animation */}
       <div className="absolute inset-0 overflow-hidden">
         <div
           className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full blur-3xl animate-pulse"
           style={{
             background:
-              "radial-gradient(circle, rgba(100, 116, 139, 0.1) 0%, rgba(71, 85, 105, 0.05) 100%)",
+              "radial-gradient(circle, rgba(100, 116, 139, 0.3) 0%, rgba(71, 85, 105, 0.15) 100%)",
           }}
         ></div>
         <div
           className="absolute -bottom-1/2 -right-1/2 w-full h-full rounded-full blur-3xl animate-pulse delay-1000"
           style={{
             background:
-              "radial-gradient(circle, rgba(148, 163, 184, 0.08) 0%, rgba(100, 116, 139, 0.04) 100%)",
+              "radial-gradient(circle, rgba(148, 163, 184, 0.25) 0%, rgba(100, 116, 139, 0.12) 100%)",
           }}
         ></div>
         <div
           className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full blur-2xl animate-pulse delay-500"
           style={{
             background:
-              "radial-gradient(circle, rgba(71, 85, 105, 0.06) 0%, rgba(51, 65, 85, 0.03) 100%)",
+              "radial-gradient(circle, rgba(71, 85, 105, 0.2) 0%, rgba(51, 65, 85, 0.1) 100%)",
           }}
         ></div>
       </div>

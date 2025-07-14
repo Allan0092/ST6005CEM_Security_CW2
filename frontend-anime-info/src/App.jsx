@@ -17,8 +17,8 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Default route redirects to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* Default route redirects to dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           {/* Authentication routes */}
           <Route path="/login" element={<Login />} />
@@ -30,8 +30,8 @@ function App() {
           <Route path="/search" element={<Search />} />
           <Route path="/favorites" element={<Favorites />} />
 
-          {/* Catch all route - redirects to login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* Catch all route - redirects to dashboard */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>
     </Router>

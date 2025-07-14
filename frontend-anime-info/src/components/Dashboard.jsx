@@ -41,42 +41,79 @@ const Dashboard = () => {
   ]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Navigation Header */}
-      <nav className="bg-black/20 backdrop-blur-lg border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+    <div
+      className="min-h-screen"
+      style={{
+        background:
+          "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
+      }}
+    >
+      {/* Background Animation - Enhanced visibility */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full blur-3xl animate-pulse"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(100, 116, 139, 0.4) 0%, rgba(71, 85, 105, 0.2) 100%)",
+          }}
+        ></div>
+        <div
+          className="absolute -bottom-1/2 -right-1/2 w-full h-full rounded-full blur-3xl animate-pulse delay-1000"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(148, 163, 184, 0.35) 0%, rgba(100, 116, 139, 0.18) 100%)",
+          }}
+        ></div>
+        <div
+          className="absolute top-1/3 left-1/3 w-96 h-96 rounded-full blur-3xl animate-pulse delay-500"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(71, 85, 105, 0.3) 0%, rgba(51, 65, 85, 0.15) 100%)",
+          }}
+        ></div>
+      </div>
+
+      {/* Navigation Header - Full width and improved */}
+      <nav
+        className="backdrop-blur-lg border-b z-10 sticky top-0"
+        style={{
+          backgroundColor: "rgba(71, 85, 105, 0.2)",
+          borderColor: "rgba(148, 163, 184, 0.3)",
+        }}
+      >
+        <div className="w-full px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
                   AnimeInfo
                 </h1>
               </div>
             </div>
 
-            {/* Navigation Links */}
+            {/* Navigation Links - Enhanced */}
             <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-4">
+              <div className="flex items-center space-x-8">
                 <Link
                   to="/dashboard"
-                  className="text-white hover:text-purple-400 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
+                  className="text-white hover:text-slate-200 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center bg-white/10"
                 >
-                  <FaHome className="mr-2" />
+                  <FaHome className="mr-2 text-lg" />
                   Home
                 </Link>
                 <Link
                   to="/search"
-                  className="text-gray-300 hover:text-purple-400 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
+                  className="text-slate-300 hover:text-slate-200 hover:bg-white/5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center"
                 >
-                  <FaSearch className="mr-2" />
+                  <FaSearch className="mr-2 text-lg" />
                   Search
                 </Link>
                 <Link
                   to="/favorites"
-                  className="text-gray-300 hover:text-purple-400 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
+                  className="text-slate-300 hover:text-slate-200 hover:bg-white/5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center"
                 >
-                  <FaHeart className="mr-2" />
+                  <FaHeart className="mr-2 text-lg" />
                   Favorites
                 </Link>
               </div>
@@ -96,7 +133,7 @@ const Dashboard = () => {
               </div>
               <Link
                 to="/login"
-                className="text-gray-300 hover:text-red-400 transition-colors"
+                className="text-slate-300 hover:text-red-400 transition-colors"
                 title="Logout"
               >
                 <FaSignOutAlt />
@@ -106,90 +143,135 @@ const Dashboard = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      {/* Main Content - Full width layout */}
+      <main className="w-full px-6 lg:px-8 py-8 relative z-10">
         {/* Welcome Section */}
-        <div className="px-4 py-6 sm:px-0">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">
+        <div className="mb-16">
+          <div className="text-center mb-16">
+            <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent">
               Welcome back, {user.name}!
             </h2>
-            <p className="text-xl text-gray-300">
+            <p className="text-2xl text-slate-300">
               Discover amazing anime and track your favorites
             </p>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-6 text-center">
-              <div className="text-3xl font-bold text-purple-400 mb-2">156</div>
-              <div className="text-gray-300">Anime Watched</div>
+          {/* Quick Stats - Better spacing */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 max-w-6xl mx-auto">
+            <div
+              className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(71, 85, 105, 0.2)",
+                border: "1px solid rgba(148, 163, 184, 0.3)",
+              }}
+            >
+              <div className="text-4xl font-bold text-slate-200 mb-3">156</div>
+              <div className="text-slate-300 text-lg">Anime Watched</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-6 text-center">
-              <div className="text-3xl font-bold text-pink-400 mb-2">23</div>
-              <div className="text-gray-300">Favorites</div>
+            <div
+              className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(71, 85, 105, 0.2)",
+                border: "1px solid rgba(148, 163, 184, 0.3)",
+              }}
+            >
+              <div className="text-4xl font-bold text-red-400 mb-3">23</div>
+              <div className="text-slate-300 text-lg">Favorites</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-6 text-center">
-              <div className="text-3xl font-bold text-blue-400 mb-2">8.7</div>
-              <div className="text-gray-300">Avg Rating</div>
+            <div
+              className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(71, 85, 105, 0.2)",
+                border: "1px solid rgba(148, 163, 184, 0.3)",
+              }}
+            >
+              <div className="text-4xl font-bold text-slate-200 mb-3">8.7</div>
+              <div className="text-slate-300 text-lg">Avg Rating</div>
             </div>
           </div>
 
-          {/* Featured Anime */}
-          <div className="mb-12">
-            <h3 className="text-2xl font-bold text-white mb-6">
+          {/* Featured Anime - Enhanced layout */}
+          <div className="mb-20">
+            <h3 className="text-3xl font-bold text-white mb-8 text-center">
               Featured Anime
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
               {featuredAnime.map((anime) => (
                 <div
                   key={anime.id}
-                  className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300 group"
+                  className="backdrop-blur-lg border rounded-2xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300 group"
+                  style={{
+                    backgroundColor: "rgba(71, 85, 105, 0.2)",
+                    border: "1px solid rgba(148, 163, 184, 0.3)",
+                  }}
                 >
                   <div className="relative">
                     <img
                       src={anime.image}
                       alt={anime.title}
-                      className="w-full h-64 object-cover"
+                      className="w-full h-72 object-cover"
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <button className="bg-purple-600 hover:bg-purple-700 text-white rounded-full p-3 transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                        <FaPlay />
+                      <button
+                        className="hover:bg-white/10 text-white rounded-full p-4 transform scale-90 group-hover:scale-100 transition-transform duration-300"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+                        }}
+                      >
+                        <FaPlay className="text-xl" />
                       </button>
                     </div>
-                    <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-lg text-sm flex items-center">
-                      <FaStar className="text-yellow-400 mr-1" />
+                    <div
+                      className="absolute top-3 right-3 text-white px-3 py-2 rounded-lg text-sm flex items-center font-semibold"
+                      style={{ backgroundColor: "rgba(32, 31, 49, 0.9)" }}
+                    >
+                      <FaStar className="text-amber-400 mr-1" />
                       {anime.rating}
                     </div>
                   </div>
-                  <div className="p-4">
-                    <h4 className="text-lg font-semibold text-white mb-2">
+                  <div className="p-6">
+                    <h4 className="text-xl font-semibold text-white mb-2">
                       {anime.title}
                     </h4>
-                    <p className="text-gray-400 text-sm">{anime.year}</p>
+                    <p className="text-slate-400">{anime.year}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Quick Actions - Enhanced layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <Link
               to="/search"
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl p-6 text-center transition-all duration-300 transform hover:scale-105"
+              className="text-white rounded-2xl p-8 text-center transition-all duration-300 transform hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+                boxShadow: "0 15px 35px rgba(100, 116, 139, 0.4)",
+              }}
             >
-              <FaSearch className="text-3xl mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-2">Discover New Anime</h3>
-              <p className="text-purple-100">Find your next favorite series</p>
+              <FaSearch className="text-4xl mb-6 mx-auto" />
+              <h3 className="text-2xl font-semibold mb-3">
+                Discover New Anime
+              </h3>
+              <p className="text-slate-200 text-lg">
+                Find your next favorite series
+              </p>
             </Link>
             <Link
               to="/favorites"
-              className="bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white rounded-xl p-6 text-center transition-all duration-300 transform hover:scale-105"
+              className="text-white rounded-2xl p-8 text-center transition-all duration-300 transform hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+                boxShadow: "0 15px 35px rgba(220, 38, 38, 0.4)",
+              }}
             >
-              <FaHeart className="text-3xl mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-2">My Favorites</h3>
-              <p className="text-pink-100">View your saved anime collection</p>
+              <FaHeart className="text-4xl mb-6 mx-auto" />
+              <h3 className="text-2xl font-semibold mb-3">My Favorites</h3>
+              <p className="text-red-100 text-lg">
+                View your saved anime collection
+              </p>
             </Link>
           </div>
         </div>
