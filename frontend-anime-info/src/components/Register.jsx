@@ -30,6 +30,7 @@ const Register = () => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [animationStep, setAnimationStep] = useState(0);
+  const [touchedFields, setTouchedFields] = useState({}); // Track which fields have been touched
 
   // Animated background particles
   const [particles, setParticles] = useState([]);
@@ -71,35 +72,49 @@ const Register = () => {
     return strength;
   };
 
-  // Form validation
+  // Form validation - only show errors for touched fields
   const validateForm = () => {
     const errors = {};
 
-    if (!formData.name.trim()) {
+    // Only validate fields that have been touched
+    if (touchedFields.name && !formData.name.trim()) {
       errors.name = "Name is required";
-    } else if (formData.name.length < 2) {
+    } else if (touchedFields.name && formData.name.length < 2) {
       errors.name = "Name must be at least 2 characters";
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email) {
+    if (touchedFields.email && !formData.email) {
       errors.email = "Email is required";
-    } else if (!emailRegex.test(formData.email)) {
+    } else if (touchedFields.email && !emailRegex.test(formData.email)) {
       errors.email = "Please enter a valid email";
     }
 
-    if (!formData.password) {
+    if (touchedFields.password && !formData.password) {
       errors.password = "Password is required";
-    } else if (formData.password.length < 8) {
+    } else if (touchedFields.password && formData.password.length < 8) {
       errors.password = "Password must be at least 8 characters";
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (
+      touchedFields.confirmPassword &&
+      formData.password !== formData.confirmPassword
+    ) {
       errors.confirmPassword = "Passwords do not match";
     }
 
     setFormErrors(errors);
-    const valid = Object.keys(errors).length === 0;
+
+    // Check if form is valid (all fields filled, no errors, and at least one field has been touched)
+    const allFieldsFilled =
+      formData.name.trim() &&
+      formData.email &&
+      formData.password &&
+      formData.confirmPassword;
+    const noErrors = Object.keys(errors).length === 0;
+    const hasBeenTouched = Object.keys(touchedFields).length > 0;
+
+    const valid = allFieldsFilled && noErrors && hasBeenTouched;
     setIsFormValid(valid);
     return valid;
   };
@@ -107,7 +122,7 @@ const Register = () => {
   useEffect(() => {
     validateForm();
     setPasswordStrength(calculatePasswordStrength(formData.password));
-  }, [formData]);
+  }, [formData, touchedFields]);
 
   const getPasswordStrengthColor = () => {
     if (passwordStrength <= 1) return "from-red-500 to-red-600";
@@ -126,14 +141,39 @@ const Register = () => {
   };
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    // Mark field as touched when user starts typing
+    setTouchedFields((prev) => ({
+      ...prev,
+      [name]: true,
+    }));
+  };
+
+  const handleBlur = (fieldName) => {
+    setFocusedField(null);
+    // Mark field as touched when user leaves the field
+    setTouchedFields((prev) => ({
+      ...prev,
+      [fieldName]: true,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Mark all fields as touched on submit attempt
+    setTouchedFields({
+      name: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
+
     if (!validateForm()) {
       return;
     }
@@ -332,7 +372,7 @@ const Register = () => {
                     value={formData.name}
                     onChange={handleChange}
                     onFocus={() => setFocusedField("name")}
-                    onBlur={() => setFocusedField(null)}
+                    onBlur={() => handleBlur("name")}
                     placeholder="Enter your full name"
                     required
                     className={`w-full pl-12 pr-12 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg ${
@@ -388,7 +428,7 @@ const Register = () => {
                     value={formData.email}
                     onChange={handleChange}
                     onFocus={() => setFocusedField("email")}
-                    onBlur={() => setFocusedField(null)}
+                    onBlur={() => handleBlur("email")}
                     placeholder="Enter your email address"
                     required
                     className={`w-full pl-12 pr-12 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg ${
@@ -444,7 +484,7 @@ const Register = () => {
                     value={formData.password}
                     onChange={handleChange}
                     onFocus={() => setFocusedField("password")}
-                    onBlur={() => setFocusedField(null)}
+                    onBlur={() => handleBlur("password")}
                     placeholder="Create a strong password"
                     required
                     className={`w-full pl-12 pr-20 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg`}
@@ -550,7 +590,7 @@ const Register = () => {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     onFocus={() => setFocusedField("confirmPassword")}
-                    onBlur={() => setFocusedField(null)}
+                    onBlur={() => handleBlur("confirmPassword")}
                     placeholder="Confirm your password"
                     required
                     className={`w-full pl-12 pr-20 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg`}
