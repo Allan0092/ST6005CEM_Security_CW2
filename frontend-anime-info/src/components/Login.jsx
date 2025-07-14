@@ -1,11 +1,12 @@
 import { useState } from "react";
 import {
+  FaEnvelope,
   FaEye,
   FaEyeSlash,
   FaGithub,
   FaGoogle,
   FaLock,
-  FaUser,
+  FaSignInAlt,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
@@ -13,21 +14,25 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Simulate login
     setTimeout(() => {
       setIsLoading(false);
       console.log("Login attempt:", formData);
@@ -36,136 +41,121 @@ const Login = () => {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden"
       style={{
         background:
           "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
       }}
     >
-      {/* Enhanced Background Animation */}
+      {/* Background Animation */}
       <div className="absolute inset-0 overflow-hidden">
         <div
           className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full blur-3xl animate-pulse"
           style={{
             background:
-              "radial-gradient(circle, rgba(100, 116, 139, 0.3) 0%, rgba(71, 85, 105, 0.15) 100%)",
+              "radial-gradient(circle, rgba(100, 116, 139, 0.4) 0%, rgba(71, 85, 105, 0.2) 100%)",
           }}
         ></div>
         <div
           className="absolute -bottom-1/2 -right-1/2 w-full h-full rounded-full blur-3xl animate-pulse delay-1000"
           style={{
             background:
-              "radial-gradient(circle, rgba(148, 163, 184, 0.25) 0%, rgba(100, 116, 139, 0.12) 100%)",
-          }}
-        ></div>
-        <div
-          className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full blur-2xl animate-pulse delay-500"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(71, 85, 105, 0.2) 0%, rgba(51, 65, 85, 0.1) 100%)",
+              "radial-gradient(circle, rgba(148, 163, 184, 0.35) 0%, rgba(100, 116, 139, 0.18) 100%)",
           }}
         ></div>
       </div>
 
-      <div className="relative w-full max-w-md">
-        {/* Main Login Card */}
+      {/* Main Container */}
+      <div className="relative w-full max-w-lg">
+        {/* Login Card */}
         <div
-          className="backdrop-blur-lg rounded-2xl shadow-2xl p-8 relative overflow-hidden"
+          className="backdrop-blur-xl rounded-3xl shadow-2xl p-10 relative overflow-hidden"
           style={{
-            backgroundColor: "rgba(71, 85, 105, 0.15)",
-            border: "1px solid rgba(148, 163, 184, 0.25)",
+            backgroundColor: "rgba(71, 85, 105, 0.2)",
+            border: "1px solid rgba(148, 163, 184, 0.3)",
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
           }}
         >
-          {/* Animated border gradient */}
-          <div
-            className="absolute inset-0 rounded-2xl blur-sm opacity-75 animate-pulse"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(100, 116, 139, 0.3) 0%, rgba(71, 85, 105, 0.4) 50%, rgba(51, 65, 85, 0.3) 100%)",
-            }}
-          ></div>
-          <div
-            className="absolute inset-[1px] rounded-2xl"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(32, 31, 49, 0.8) 0%, rgba(26, 24, 39, 0.9) 50%, rgba(21, 20, 32, 0.8) 100%)",
-            }}
-          ></div>
-
           <div className="relative z-10">
             {/* Header */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-10">
               <div
-                className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 relative"
+                className="inline-flex items-center justify-center w-24 h-24 rounded-full mb-6 relative"
                 style={{
                   background:
                     "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+                  boxShadow: "0 8px 32px rgba(100, 116, 139, 0.3)",
                 }}
               >
-                <FaUser className="text-white text-2xl" />
-                <div
-                  className="absolute inset-0 rounded-full animate-ping opacity-25"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #64748b 0%, #475569 100%)",
-                  }}
-                ></div>
+                <FaSignInAlt className="text-white text-3xl" />
               </div>
-              <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent">
+              <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
                 Welcome Back
               </h2>
-              <p className="text-slate-300">Sign in to your account</p>
+              <p className="text-slate-300 text-lg">Sign in to your account</p>
             </div>
 
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaUser className="text-slate-400" />
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 w-12 flex items-center justify-center text-slate-400">
+                    <FaEnvelope className="text-lg" />
+                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Enter your email"
+                    required
+                    className="w-full pl-12 pr-4 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/50 focus:border-transparent transition-all duration-300 text-lg"
+                    style={{
+                      backgroundColor: "rgba(71, 85, 105, 0.25)",
+                      border: "2px solid rgba(100, 116, 139, 0.3)",
+                    }}
+                  />
                 </div>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Email address"
-                  required
-                  className="w-full pl-10 pr-4 py-3 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300"
-                  style={{
-                    backgroundColor: "rgba(71, 85, 105, 0.2)",
-                    border: "1px solid rgba(100, 116, 139, 0.3)",
-                    focusRingColor: "rgba(148, 163, 184, 0.5)",
-                  }}
-                />
               </div>
 
               {/* Password Field */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaLock className="text-slate-400" />
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 w-12 flex items-center justify-center text-slate-400">
+                    <FaLock className="text-lg" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Enter your password"
+                    required
+                    className="w-full pl-12 pr-16 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/50 focus:border-transparent transition-all duration-300 text-lg"
+                    style={{
+                      backgroundColor: "rgba(71, 85, 105, 0.25)",
+                      border: "2px solid rgba(100, 116, 139, 0.3)",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                  >
+                    {showPassword ? (
+                      <FaEyeSlash className="text-lg" />
+                    ) : (
+                      <FaEye className="text-lg" />
+                    )}
+                  </button>
                 </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Password"
-                  required
-                  className="w-full pl-10 pr-12 py-3 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300"
-                  style={{
-                    backgroundColor: "rgba(71, 85, 105, 0.2)",
-                    border: "1px solid rgba(100, 116, 139, 0.3)",
-                    focusRingColor: "rgba(148, 163, 184, 0.5)",
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition-colors"
-                >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
               </div>
 
               {/* Remember Me & Forgot Password */}
@@ -173,9 +163,11 @@ const Login = () => {
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 bg-transparent border rounded focus:ring-2 transition-all duration-300"
+                    name="rememberMe"
+                    checked={formData.rememberMe}
+                    onChange={handleChange}
+                    className="w-4 h-4 rounded focus:ring-2 transition-all duration-300"
                     style={{
-                      borderColor: "rgba(148, 163, 184, 0.4)",
                       accentColor: "#64748b",
                     }}
                   />
@@ -185,20 +177,20 @@ const Login = () => {
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-sm text-slate-300 hover:text-slate-200 transition-colors underline-offset-2 hover:underline"
+                  className="text-sm text-slate-300 hover:text-white transition-colors"
                 >
                   Forgot password?
                 </Link>
               </div>
 
-              {/* Login Button */}
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full py-3 px-4 font-semibold rounded-lg transition-all duration-300 transform relative overflow-hidden group ${
+                className={`w-full py-4 px-6 font-bold rounded-xl transition-all duration-500 transform relative overflow-hidden group text-lg ${
                   isLoading
                     ? "cursor-not-allowed opacity-50"
-                    : "hover:scale-105 hover:shadow-2xl"
+                    : "hover:scale-[1.02] hover:shadow-2xl"
                 }`}
                 style={{
                   background: isLoading
@@ -206,46 +198,40 @@ const Login = () => {
                     : "linear-gradient(135deg, #64748b 0%, #475569 100%)",
                   boxShadow: isLoading
                     ? "none"
-                    : "0 10px 25px rgba(100, 116, 139, 0.3)",
+                    : "0 15px 35px rgba(100, 116, 139, 0.4)",
                 }}
               >
-                {/* Button background animation */}
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #94a3b8 0%, #64748b 100%)",
-                  }}
-                ></div>
-
-                <div className="relative text-white">
+                <div className="relative flex items-center justify-center text-white">
                   {isLoading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin mr-2"></div>
-                      Signing in...
-                    </div>
+                    <>
+                      <div className="w-6 h-6 border-t-2 border-white rounded-full animate-spin mr-3"></div>
+                      <span>Signing in...</span>
+                    </>
                   ) : (
-                    "Sign In"
+                    <>
+                      <FaSignInAlt className="mr-3 text-xl" />
+                      <span>Sign In</span>
+                    </>
                   )}
                 </div>
               </button>
             </form>
 
             {/* Divider */}
-            <div className="my-6">
+            <div className="my-8">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div
                     className="w-full border-t"
-                    style={{ borderColor: "rgba(148, 163, 184, 0.2)" }}
+                    style={{ borderColor: "rgba(148, 163, 184, 0.4)" }}
                   ></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span
-                    className="px-4 text-slate-300 rounded-full border"
+                    className="px-6 py-2 text-slate-300 rounded-full border font-semibold"
                     style={{
-                      backgroundColor: "rgba(32, 31, 49, 0.8)",
-                      borderColor: "rgba(100, 116, 139, 0.2)",
+                      backgroundColor: "rgba(32, 31, 49, 0.95)",
+                      borderColor: "rgba(100, 116, 139, 0.4)",
                     }}
                   >
                     Or continue with
@@ -255,51 +241,36 @@ const Login = () => {
             </div>
 
             {/* Social Login */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <button
-                className="w-full flex items-center justify-center px-4 py-3 border rounded-lg text-white hover:bg-white/5 transition-all duration-300 group relative overflow-hidden"
-                style={{ borderColor: "rgba(148, 163, 184, 0.2)" }}
+                className="w-full flex items-center justify-center px-6 py-4 border-2 rounded-xl text-white hover:bg-white/5 transition-all duration-300 group font-semibold text-lg"
+                style={{ borderColor: "rgba(148, 163, 184, 0.4)" }}
               >
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{ background: "rgba(239, 68, 68, 0.1)" }}
-                ></div>
-                <FaGoogle className="text-red-400 mr-3 group-hover:scale-110 transition-transform duration-300 relative z-10" />
-                <span className="relative z-10">Continue with Google</span>
+                <FaGoogle className="text-red-400 mr-4 text-xl" />
+                <span>Continue with Google</span>
               </button>
               <button
-                className="w-full flex items-center justify-center px-4 py-3 border rounded-lg text-white hover:bg-white/5 transition-all duration-300 group relative overflow-hidden"
-                style={{ borderColor: "rgba(148, 163, 184, 0.2)" }}
+                className="w-full flex items-center justify-center px-6 py-4 border-2 rounded-xl text-white hover:bg-white/5 transition-all duration-300 group font-semibold text-lg"
+                style={{ borderColor: "rgba(148, 163, 184, 0.4)" }}
               >
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{ background: "rgba(100, 116, 139, 0.1)" }}
-                ></div>
-                <FaGithub className="text-slate-400 mr-3 group-hover:scale-110 transition-transform duration-300 relative z-10" />
-                <span className="relative z-10">Continue with GitHub</span>
+                <FaGithub className="text-slate-400 mr-4 text-xl" />
+                <span>Continue with GitHub</span>
               </button>
             </div>
 
-            {/* Sign Up Link */}
-            <div className="mt-6 text-center">
-              <p className="text-slate-400">
+            {/* Register Link */}
+            <div className="mt-8 text-center">
+              <p className="text-slate-400 text-lg">
                 Don't have an account?{" "}
                 <Link
                   to="/register"
-                  className="text-slate-300 hover:text-slate-200 font-semibold transition-colors hover:underline underline-offset-2"
+                  className="text-slate-200 hover:text-white font-bold transition-all duration-300 hover:underline underline-offset-4"
                 >
                   Sign up
                 </Link>
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm">
-            © 2025 Anime Info. All rights reserved.
-          </p>
         </div>
       </div>
     </div>

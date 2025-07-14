@@ -9,6 +9,7 @@ import Dashboard from "./components/Dashboard";
 import Favorites from "./components/Favorites";
 import ForgotPassword from "./components/ForgotPassword";
 import Login from "./components/Login";
+import Navbar from "./components/Navbar";
 import Register from "./components/Register";
 import Search from "./components/Search";
 
@@ -16,8 +17,9 @@ function App() {
   return (
     <Router>
       <div className="App">
+        <Navbar />
+
         <Routes>
-          {/* Default route redirects to dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           {/* Authentication routes */}

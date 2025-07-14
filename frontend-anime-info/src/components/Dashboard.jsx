@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  FaHeart,
-  FaHome,
-  FaPlay,
-  FaSearch,
-  FaSignOutAlt,
-  FaStar,
-} from "react-icons/fa";
+import { FaHeart, FaPlay, FaSearch, FaStar } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
@@ -72,76 +65,6 @@ const Dashboard = () => {
           }}
         ></div>
       </div>
-
-      {/* Navigation Header - Full width and improved */}
-      <nav
-        className="backdrop-blur-lg border-b z-10 sticky top-0"
-        style={{
-          backgroundColor: "rgba(71, 85, 105, 0.2)",
-          borderColor: "rgba(148, 163, 184, 0.3)",
-        }}
-      >
-        <div className="w-full px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo */}
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
-                  AnimeInfo
-                </h1>
-              </div>
-            </div>
-
-            {/* Navigation Links - Enhanced */}
-            <div className="hidden md:block">
-              <div className="flex items-center space-x-8">
-                <Link
-                  to="/dashboard"
-                  className="text-white hover:text-slate-200 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center bg-white/10"
-                >
-                  <FaHome className="mr-2 text-lg" />
-                  Home
-                </Link>
-                <Link
-                  to="/search"
-                  className="text-slate-300 hover:text-slate-200 hover:bg-white/5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center"
-                >
-                  <FaSearch className="mr-2 text-lg" />
-                  Search
-                </Link>
-                <Link
-                  to="/favorites"
-                  className="text-slate-300 hover:text-slate-200 hover:bg-white/5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center"
-                >
-                  <FaHeart className="mr-2 text-lg" />
-                  Favorites
-                </Link>
-              </div>
-            </div>
-
-            {/* User Menu */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center text-white">
-                <img
-                  className="h-8 w-8 rounded-full"
-                  src={user.avatar}
-                  alt={user.name}
-                />
-                <span className="ml-2 text-sm font-medium hidden sm:block">
-                  {user.name}
-                </span>
-              </div>
-              <Link
-                to="/login"
-                className="text-slate-300 hover:text-red-400 transition-colors"
-                title="Logout"
-              >
-                <FaSignOutAlt />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
 
       {/* Main Content - Full width layout */}
       <main className="w-full px-6 lg:px-8 py-8 relative z-10">

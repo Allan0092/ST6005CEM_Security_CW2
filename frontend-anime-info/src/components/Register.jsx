@@ -386,15 +386,19 @@ const Register = () => {
                       backgroundColor: "rgba(71, 85, 105, 0.25)",
                       border: formErrors.name
                         ? "2px solid rgba(248, 113, 113, 0.6)"
-                        : formData.name && !formErrors.name
+                        : formData.name &&
+                          !formErrors.name &&
+                          touchedFields.name
                         ? "2px solid rgba(52, 211, 153, 0.6)"
                         : "2px solid rgba(100, 116, 139, 0.3)",
                     }}
                   />
                   <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center">
-                    {formData.name && !formErrors.name && (
-                      <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
-                    )}
+                    {formData.name &&
+                      !formErrors.name &&
+                      touchedFields.name && (
+                        <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
+                      )}
                     {formErrors.name && (
                       <FaTimes className="text-red-400 text-lg animate-fadeIn" />
                     )}
@@ -442,15 +446,19 @@ const Register = () => {
                       backgroundColor: "rgba(71, 85, 105, 0.25)",
                       border: formErrors.email
                         ? "2px solid rgba(248, 113, 113, 0.6)"
-                        : formData.email && !formErrors.email
+                        : formData.email &&
+                          !formErrors.email &&
+                          touchedFields.email
                         ? "2px solid rgba(52, 211, 153, 0.6)"
                         : "2px solid rgba(100, 116, 139, 0.3)",
                     }}
                   />
                   <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center">
-                    {formData.email && !formErrors.email && (
-                      <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
-                    )}
+                    {formData.email &&
+                      !formErrors.email &&
+                      touchedFields.email && (
+                        <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
+                      )}
                     {formErrors.email && (
                       <FaTimes className="text-red-400 text-lg animate-fadeIn" />
                     )}
@@ -492,15 +500,19 @@ const Register = () => {
                       backgroundColor: "rgba(71, 85, 105, 0.25)",
                       border: formErrors.password
                         ? "2px solid rgba(248, 113, 113, 0.6)"
-                        : formData.password && !formErrors.password
+                        : formData.password &&
+                          !formErrors.password &&
+                          touchedFields.password
                         ? "2px solid rgba(52, 211, 153, 0.6)"
                         : "2px solid rgba(100, 116, 139, 0.3)",
                     }}
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 space-x-2">
-                    {formData.password && !formErrors.password && (
-                      <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
-                    )}
+                    {formData.password &&
+                      !formErrors.password &&
+                      touchedFields.password && (
+                        <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
+                      )}
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
@@ -600,7 +612,8 @@ const Register = () => {
                         ? "2px solid rgba(248, 113, 113, 0.6)"
                         : formData.confirmPassword &&
                           !formErrors.confirmPassword &&
-                          formData.password === formData.confirmPassword
+                          formData.password === formData.confirmPassword &&
+                          touchedFields.confirmPassword
                         ? "2px solid rgba(52, 211, 153, 0.6)"
                         : "2px solid rgba(100, 116, 139, 0.3)",
                     }}
@@ -608,7 +621,8 @@ const Register = () => {
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 space-x-2">
                     {formData.confirmPassword &&
                       !formErrors.confirmPassword &&
-                      formData.password === formData.confirmPassword && (
+                      formData.password === formData.confirmPassword &&
+                      touchedFields.confirmPassword && (
                         <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
                       )}
                     {formErrors.confirmPassword && (
