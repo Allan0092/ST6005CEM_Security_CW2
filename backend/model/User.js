@@ -76,9 +76,19 @@ const userSchema = new mongoose.Schema(
           type: String,
         },
       ],
-      notifications: {
+      marketingEmails: {
         type: Boolean,
-        default: true,
+        default: false,
+      },
+      language: {
+        type: String,
+        enum: ["en", "ja", "es", "fr", "de"],
+        default: "en",
+      },
+      theme: {
+        type: String,
+        enum: ["light", "dark", "auto"],
+        default: "auto",
       },
     },
     resetPasswordToken: String,
