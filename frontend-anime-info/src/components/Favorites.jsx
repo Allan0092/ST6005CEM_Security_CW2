@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaArrowLeft, FaHeart, FaStar, FaTrash } from "react-icons/fa";
+import { FaHeart, FaStar, FaTrash } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const Favorites = () => {
@@ -7,7 +7,7 @@ const Favorites = () => {
     {
       id: 1,
       title: "Attack on Titan",
-      image: "https://via.placeholder.com/300x400",
+      image: "/images/anime-placeholder.jpg",
       rating: 9.0,
       year: 2023,
       genre: "Action, Drama",
@@ -16,7 +16,7 @@ const Favorites = () => {
     {
       id: 2,
       title: "Demon Slayer",
-      image: "https://via.placeholder.com/300x400",
+      image: "/images/anime-placeholder.jpg",
       rating: 8.7,
       year: 2023,
       genre: "Action, Supernatural",
@@ -25,7 +25,7 @@ const Favorites = () => {
     {
       id: 3,
       title: "One Piece",
-      image: "https://via.placeholder.com/300x400",
+      image: "/images/anime-placeholder.jpg",
       rating: 9.2,
       year: 2023,
       genre: "Adventure, Comedy",
@@ -45,7 +45,6 @@ const Favorites = () => {
           "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
       }}
     >
-      {/* Enhanced Background Animation */}
       <div className="absolute inset-0 overflow-hidden">
         <div
           className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full blur-3xl animate-pulse"
@@ -72,25 +71,18 @@ const Favorites = () => {
 
       {/* Header */}
       <div
-        className="backdrop-blur-lg border-b p-4 relative z-10"
+        className="backdrop-blur-lg border-b p-6 relative z-10"
         style={{
           backgroundColor: "rgba(71, 85, 105, 0.15)",
           borderColor: "rgba(148, 163, 184, 0.2)",
         }}
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center text-slate-400 hover:text-white transition-colors"
-          >
-            <FaArrowLeft className="mr-2" />
-            Back to Dashboard
-          </Link>
-          <h1 className="text-2xl font-bold flex items-center bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent">
-            <FaHeart className="text-red-400 mr-2" />
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-3xl font-bold flex items-center justify-center bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent">
+            <FaHeart className="text-red-400 mr-3" />
             My Favorites
           </h1>
-          <div></div>
+          <p className="text-slate-400 mt-2">Your personal anime collection</p>
         </div>
       </div>
 
@@ -147,6 +139,9 @@ const Favorites = () => {
                       src={anime.image}
                       alt={anime.title}
                       className="w-full h-64 object-cover"
+                      onError={(e) => {
+                        e.target.src = "/images/anime-placeholder.jpg";
+                      }}
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                       <button
@@ -191,30 +186,18 @@ const Favorites = () => {
             </h2>
             <p className="text-slate-400 mb-8 max-w-md mx-auto">
               Start adding your favorite anime to build your personal
-              collection. You can add favorites from the search page or
-              dashboard.
+              collection. You can add favorites from the search page.
             </p>
-            <div className="space-y-4">
-              <Link
-                to="/search"
-                className="inline-block font-semibold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 text-white"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #64748b 0%, #475569 100%)",
-                  boxShadow: "0 10px 25px rgba(100, 116, 139, 0.3)",
-                }}
-              >
-                Discover Anime
-              </Link>
-              <div className="block">
-                <Link
-                  to="/dashboard"
-                  className="text-slate-400 hover:text-white transition-colors"
-                >
-                  Go back to Dashboard
-                </Link>
-              </div>
-            </div>
+            <Link
+              to="/search"
+              className="inline-block font-semibold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 text-white"
+              style={{
+                background: "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+                boxShadow: "0 10px 25px rgba(100, 116, 139, 0.3)",
+              }}
+            >
+              Discover Anime
+            </Link>
           </div>
         )}
       </div>

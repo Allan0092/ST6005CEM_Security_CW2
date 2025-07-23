@@ -6,28 +6,28 @@ const Dashboard = () => {
   const [user] = useState({
     name: "John Doe",
     email: "john@example.com",
-    avatar: "https://via.placeholder.com/150",
+    avatar: "/images/avatar-placeholder.jpg",
   });
 
   const [featuredAnime] = useState([
     {
       id: 1,
       title: "Attack on Titan",
-      image: "https://via.placeholder.com/300x400",
+      image: "/images/anime-placeholder.jpg",
       rating: 9.0,
       year: 2023,
     },
     {
       id: 2,
       title: "Demon Slayer",
-      image: "https://via.placeholder.com/300x400",
+      image: "/images/anime-placeholder.jpg",
       rating: 8.7,
       year: 2023,
     },
     {
       id: 3,
       title: "One Piece",
-      image: "https://via.placeholder.com/300x400",
+      image: "/images/anime-placeholder.jpg",
       rating: 9.2,
       year: 2023,
     },
@@ -132,6 +132,9 @@ const Dashboard = () => {
                       src={anime.image}
                       alt={anime.title}
                       className="w-full h-72 object-cover"
+                      onError={(e) => {
+                        e.target.src = "/images/anime-placeholder.jpg";
+                      }}
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                       <button
