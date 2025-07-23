@@ -4,26 +4,36 @@ import {
   FaHeart,
   FaHome,
   FaSearch,
+  FaSignInAlt,
   FaSignOutAlt,
   FaTimes,
+  FaUserPlus,
 } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
-  const [user] = useState({
-    name: "John Doe",
-    email: "john@example.com",
-    avatar: "https://via.placeholder.com/150",
-  });
-
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
-  // Don't show navbar on login and register pages
-  //   const hideNavbarRoutes = ["/login", "/register"];
-  const hideNavbarRoutes = [];
-  if (hideNavbarRoutes.includes(location.pathname)) {
-    return null;
+  if (isLoading) {
+    return (
+      <nav
+        className="backdrop-blur-xl border-b z-50 sticky top-0 shadow-lg"
+        style={{
+          backgroundColor: "rgba(32, 31, 49, 0.95)",
+          borderColor: "rgba(148, 163, 184, 0.3)",
+        }}
+      >
+        <div className="w-full px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            <div className="animate-pulse bg-slate-700 h-8 w-32 rounded"></div>
+            <div className="animate-pulse bg-slate-700 h-8 w-24 rounded"></div>
+          </div>
+        </div>
+      </nav>
+    );
   }
 
   const isActiveRoute = (path) => {
@@ -35,6 +45,22 @@ const Navbar = () => {
     { path: "/search", label: "Search", icon: FaSearch },
     { path: "/favorites", label: "Favorites", icon: FaHeart },
   ];
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const getAvatarUrl = (avatar) => {
+    if (!avatar) return "/images/avatar-placeholder.jpg";
+
+    if (avatar.startsWith("http")) return avatar;
+
+    if (avatar.includes("/uploads/")) {
+      return `http://localhost:3000${avatar}`;
+    }
+
+    return "/images/avatar-placeholder.jpg";
+  };
 
   return (
     <nav
@@ -56,7 +82,6 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Desktop Navigation Links */}
           <div className="hidden md:block">
             <div className="flex items-center space-x-2">
               {navLinks.map((link) => {
@@ -81,31 +106,76 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* User Menu & Mobile Menu Button */}
           <div className="flex items-center space-x-4">
-            {/* User Info */}
-            <div className="flex items-center text-white">
-              <img
-                className="h-10 w-10 rounded-full border-2 border-slate-400/50 hover:border-slate-300 transition-colors"
-                src={user.avatar}
-                alt={user.name}
-              />
-              <div className="ml-3 hidden sm:block">
-                <span className="text-sm font-medium text-slate-100">
-                  {user.name}
-                </span>
-                <p className="text-xs text-slate-300">{user.email}</p>
-              </div>
-            </div>
+            {isAuthenticated ? (
+              <>
+                {/* Authenticated User Info */}
+                <div className="flex items-center text-white">
+                  <img
+                    className="h-10 w-10 rounded-full border-2 border-slate-400/50 hover:border-slate-300 transition-colors object-cover"
+                    src={getAvatarUrl(user?.avatar)}
+                    alt={user?.name || "User"}
+                    onError={(e) => {
+                      console.log("Avatar load error, using fallback");
+                      e.target.src = "/images/avatar-placeholder.jpg";
+                    }}
+                  />
+                  <div className="ml-3 hidden sm:block">
+                    <span className="text-sm font-medium text-slate-100">
+                      {user?.name || "Loading..."}
+                    </span>
+                    <p className="text-xs text-slate-300">
+                      {user?.email || ""}
+                    </p>
+                  </div>
+                </div>
 
-            {/* Logout Button */}
-            <Link
-              to="/login"
-              className="text-slate-300 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-400/20"
-              title="Logout"
-            >
-              <FaSignOutAlt className="text-lg" />
-            </Link>
+                {/* Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  className="text-slate-300 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-400/20"
+                  title="Logout"
+                >
+                  <FaSignOutAlt className="text-lg" />
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Authentication Buttons for Non-authenticated Users */}
+                <div className="hidden sm:flex items-center space-x-3">
+                  <Link
+                    to="/login"
+                    className="flex items-center px-4 py-2 text-slate-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                  >
+                    <FaSignInAlt className="mr-2" />
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="flex items-center px-4 py-2 text-white rounded-lg transition-all duration-300 hover:scale-105"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+                      boxShadow: "0 4px 15px rgba(100, 116, 139, 0.3)",
+                    }}
+                  >
+                    <FaUserPlus className="mr-2" />
+                    Sign Up
+                  </Link>
+                </div>
+
+                {/* Mobile Auth Button */}
+                <div className="sm:hidden">
+                  <Link
+                    to="/login"
+                    className="text-slate-300 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
+                    title="Login"
+                  >
+                    <FaSignInAlt className="text-lg" />
+                  </Link>
+                </div>
+              </>
+            )}
 
             {/* Mobile Menu Button */}
             <button
@@ -152,24 +222,69 @@ const Navbar = () => {
                 );
               })}
 
-              {/* Mobile User Info */}
+              {/* Mobile User Section */}
               <div
                 className="border-t pt-4 mt-4"
                 style={{ borderColor: "rgba(148, 163, 184, 0.2)" }}
               >
-                <div className="flex items-center px-4 py-2">
-                  <img
-                    className="h-8 w-8 rounded-full"
-                    src={user.avatar}
-                    alt={user.name}
-                  />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-slate-100">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-slate-300">{user.email}</p>
-                  </div>
-                </div>
+                {isAuthenticated ? (
+                  <>
+                    {/* User Info */}
+                    <div className="flex items-center px-4 py-2 mb-3">
+                      <img
+                        className="h-8 w-8 rounded-full object-cover"
+                        src={getAvatarUrl(user?.avatar)}
+                        alt={user?.name || "User"}
+                        onError={(e) => {
+                          e.target.src = "/images/avatar-placeholder.jpg";
+                        }}
+                      />
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-slate-100">
+                          {user?.name || "Loading..."}
+                        </p>
+                        <p className="text-xs text-slate-300">
+                          {user?.email || ""}
+                        </p>
+                      </div>
+                    </div>
+                    {/* Logout Button */}
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center w-full px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors"
+                    >
+                      <FaSignOutAlt className="mr-3" />
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* Mobile Auth Links */}
+                    <Link
+                      to="/login"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center px-4 py-3 text-slate-200 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <FaSignInAlt className="mr-3" />
+                      Login
+                    </Link>
+                    <Link
+                      to="/register"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center px-4 py-3 text-white rounded-lg transition-colors mt-2"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+                      }}
+                    >
+                      <FaUserPlus className="mr-3" />
+                      Sign Up
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

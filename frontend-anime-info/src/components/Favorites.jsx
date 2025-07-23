@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { FaHeart, FaStar, FaTrash } from "react-icons/fa";
+import { FaHeart, FaSignInAlt, FaStar, FaTrash, FaUserPlus } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Favorites = () => {
+  const { isAuthenticated, isLoading } = useAuth();
   const [favorites, setFavorites] = useState([
     {
       id: 1,
@@ -37,6 +39,169 @@ const Favorites = () => {
     setFavorites(favorites.filter((anime) => anime.id !== id));
   };
 
+  // Show login prompt for unauthenticated users
+  if (!isLoading && !isAuthenticated) {
+    return (
+      <div
+        className="min-h-screen"
+        style={{
+          background:
+            "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
+        }}
+      >
+        {/* Background Animation */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full blur-3xl animate-pulse"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(100, 116, 139, 0.3) 0%, rgba(71, 85, 105, 0.15) 100%)",
+            }}
+          ></div>
+          <div
+            className="absolute -bottom-1/2 -right-1/2 w-full h-full rounded-full blur-3xl animate-pulse delay-1000"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(148, 163, 184, 0.25) 0%, rgba(100, 116, 139, 0.12) 100%)",
+            }}
+          ></div>
+        </div>
+
+        {/* Header */}
+        <div
+          className="backdrop-blur-lg border-b p-6 relative z-10"
+          style={{
+            backgroundColor: "rgba(71, 85, 105, 0.15)",
+            borderColor: "rgba(148, 163, 184, 0.2)",
+          }}
+        >
+          <div className="max-w-7xl mx-auto text-center">
+            <h1 className="text-3xl font-bold flex items-center justify-center bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent">
+              <FaHeart className="text-red-400 mr-3" />
+              My Favorites
+            </h1>
+            <p className="text-slate-400 mt-2">Your personal anime collection</p>
+          </div>
+        </div>
+
+        {/* Login Required Message */}
+        <div className="max-w-4xl mx-auto p-6 relative z-10">
+          <div className="text-center py-20">
+            <div
+              className="inline-flex items-center justify-center w-24 h-24 rounded-full mb-8 mx-auto"
+              style={{
+                background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+                boxShadow: "0 15px 35px rgba(220, 38, 38, 0.4)",
+              }}
+            >
+              <FaHeart className="text-white text-4xl" />
+            </div>
+            
+            <h2 className="text-4xl font-bold text-white mb-6">
+              Sign in to view your favorites
+            </h2>
+            <p className="text-slate-300 mb-12 text-lg max-w-2xl mx-auto">
+              Create an account or sign in to save your favorite anime and build your personal collection. 
+              Track what you love and discover new shows based on your preferences.
+            </p>
+
+            {/* Feature Benefits */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 max-w-4xl mx-auto">
+              <div
+                className="backdrop-blur-lg border rounded-xl p-6 text-center"
+                style={{
+                  backgroundColor: "rgba(71, 85, 105, 0.15)",
+                  border: "1px solid rgba(148, 163, 184, 0.25)",
+                }}
+              >
+                <FaHeart className="text-red-400 text-3xl mb-4 mx-auto" />
+                <h3 className="text-xl font-semibold text-white mb-3">Save Favorites</h3>
+                <p className="text-slate-300">Keep track of anime you love and want to recommend to others</p>
+              </div>
+              
+              <div
+                className="backdrop-blur-lg border rounded-xl p-6 text-center"
+                style={{
+                  backgroundColor: "rgba(71, 85, 105, 0.15)",
+                  border: "1px solid rgba(148, 163, 184, 0.25)",
+                }}
+              >
+                <FaStar className="text-amber-400 text-3xl mb-4 mx-auto" />
+                <h3 className="text-xl font-semibold text-white mb-3">Rate & Review</h3>
+                <p className="text-slate-300">Share your thoughts and ratings with the anime community</p>
+              </div>
+              
+              <div
+                className="backdrop-blur-lg border rounded-xl p-6 text-center"
+                style={{
+                  backgroundColor: "rgba(71, 85, 105, 0.15)",
+                  border: "1px solid rgba(148, 163, 184, 0.25)",
+                }}
+              >
+                <div className="text-slate-400 text-3xl mb-4 mx-auto">📊</div>
+                <h3 className="text-xl font-semibold text-white mb-3">Track Progress</h3>
+                <p className="text-slate-300">Monitor your watching progress and get personalized recommendations</p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/register"
+                className="inline-flex items-center justify-center px-8 py-4 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 text-white text-lg"
+                style={{
+                  background: "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+                  boxShadow: "0 15px 35px rgba(100, 116, 139, 0.4)",
+                }}
+              >
+                <FaUserPlus className="mr-3 text-xl" />
+                Create Free Account
+              </Link>
+              
+              <Link
+                to="/login"
+                className="inline-flex items-center justify-center px-8 py-4 font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 text-slate-200 hover:text-white border border-slate-500 hover:border-slate-400 text-lg"
+              >
+                <FaSignInAlt className="mr-3 text-xl" />
+                Sign In
+              </Link>
+            </div>
+
+            {/* Continue as Guest */}
+            <div className="mt-8">
+              <p className="text-slate-400 mb-4">Or continue exploring without an account</p>
+              <Link
+                to="/search"
+                className="text-slate-300 hover:text-white font-medium transition-colors hover:underline underline-offset-4"
+              >
+                Browse Anime Collection →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background:
+            "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
+        }}
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-400 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading your favorites...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show favorites for authenticated users
   return (
     <div
       className="min-h-screen"
