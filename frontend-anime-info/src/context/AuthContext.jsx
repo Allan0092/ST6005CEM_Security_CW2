@@ -21,13 +21,11 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
+  // Update the checkAuthStatus function
   const checkAuthStatus = async () => {
     try {
       const token = localStorage.getItem("token");
-      console.log(
-        "Checking auth status, token:",
-        token ? "exists" : "not found"
-      );
+      console.log("Checking auth status, token:", token ? "exists" : "not found");
 
       if (token) {
         const response = await authAPI.getMe();
@@ -37,22 +35,26 @@ export const AuthProvider = ({ children }) => {
           setUser(response.data.user);
           setIsAuthenticated(true);
           console.log("User authenticated:", response.data.user);
+          return { success: true, user: response.data.user };
         } else {
           console.log("Token invalid, removing from storage");
           localStorage.removeItem("token");
           setUser(null);
           setIsAuthenticated(false);
+          return { success: false };
         }
       } else {
         console.log("No token found");
         setUser(null);
         setIsAuthenticated(false);
+        return { success: false };
       }
     } catch (error) {
       console.error("Auth check failed:", error);
       localStorage.removeItem("token");
       setUser(null);
       setIsAuthenticated(false);
+      return { success: false, error: error.message };
     } finally {
       setIsLoading(false);
     }
@@ -64,6 +66,16 @@ export const AuthProvider = ({ children }) => {
       console.log("Login response:", response);
 
       if (response.success) {
+        // Check if OTP verification is required
+        if (response.data.requiresOTP) {
+          return {
+            success: true,
+            requiresOTP: true,
+            data: response.data,
+          };
+        }
+
+        // Normal login flow (if OTP is not required)
         const token = response.data.token;
         localStorage.setItem("token", token);
         setUser(response.data.user);

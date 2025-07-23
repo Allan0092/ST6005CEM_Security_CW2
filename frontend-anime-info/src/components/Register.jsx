@@ -8,20 +8,25 @@ import {
   FaGoogle,
   FaLock,
   FaShieldAlt,
-  FaStar,
   FaTimes,
   FaUser,
   FaUserPlus,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Register = () => {
+  const navigate = useNavigate();
+  const { register: registerUser } = useAuth();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
+    agreeToTerms: false,
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,133 +35,153 @@ const Register = () => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [animationStep, setAnimationStep] = useState(0);
-  const [touchedFields, setTouchedFields] = useState({}); // Track which fields have been touched
+  const [touchedFields, setTouchedFields] = useState({});
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
-  // Animated background particles
-  const [particles, setParticles] = useState([]);
-
+  // Animation sequence
   useEffect(() => {
-    // Generate random particles for background animation
-    const generateParticles = () => {
-      const newParticles = [];
-      for (let i = 0; i < 20; i++) {
-        newParticles.push({
-          id: i,
-          x: Math.random() * 100,
-          y: Math.random() * 100,
-          size: Math.random() * 4 + 2,
-          duration: Math.random() * 20 + 10,
-          delay: Math.random() * 5,
-        });
-      }
-      setParticles(newParticles);
-    };
-    generateParticles();
-
-    // Staggered animation entrance
-    const timer = setInterval(() => {
-      setAnimationStep((prev) => (prev < 4 ? prev + 1 : prev));
-    }, 200);
-
-    return () => clearInterval(timer);
+    const sequence = [0, 1, 2, 3, 4];
+    sequence.forEach((step, index) => {
+      setTimeout(() => setAnimationStep(step), index * 200);
+    });
   }, []);
 
   // Password strength calculation
   const calculatePasswordStrength = (password) => {
     let strength = 0;
-    if (password.length >= 8) strength += 1;
-    if (/[a-z]/.test(password)) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/\d/.test(password)) strength += 1;
-    if (/[^a-zA-Z\d]/.test(password)) strength += 1;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[@$!%*?&]/.test(password)) strength++;
     return strength;
   };
 
-  // Form validation - only show errors for touched fields
-  const validateForm = () => {
+  // Form validation
+  const validateForm = (showAllErrors = false) => {
     const errors = {};
 
-    // Only validate fields that have been touched
-    if (touchedFields.name && !formData.name.trim()) {
-      errors.name = "Name is required";
-    } else if (touchedFields.name && formData.name.length < 2) {
-      errors.name = "Name must be at least 2 characters";
+    // Name validation
+    if (showAllErrors || touchedFields.name) {
+      if (!formData.name.trim()) {
+        errors.name = "Name is required";
+      } else if (formData.name.trim().length < 2) {
+        errors.name = "Name must be at least 2 characters";
+      } else if (!/^[a-zA-Z\s'-]+$/.test(formData.name)) {
+        errors.name =
+          "Name can only contain letters, spaces, hyphens, and apostrophes";
+      }
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (touchedFields.email && !formData.email) {
-      errors.email = "Email is required";
-    } else if (touchedFields.email && !emailRegex.test(formData.email)) {
-      errors.email = "Please enter a valid email";
+    // Email validation
+    if (showAllErrors || touchedFields.email) {
+      if (!formData.email) {
+        errors.email = "Email is required";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        errors.email = "Please enter a valid email address";
+      }
     }
 
-    if (touchedFields.password && !formData.password) {
-      errors.password = "Password is required";
-    } else if (touchedFields.password && formData.password.length < 8) {
-      errors.password = "Password must be at least 8 characters";
+    // Password validation
+    if (showAllErrors || touchedFields.password) {
+      if (!formData.password) {
+        errors.password = "Password is required";
+      } else {
+        if (formData.password.length < 8) {
+          errors.password = "Password must be at least 8 characters";
+        } else if (
+          !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(
+            formData.password
+          )
+        ) {
+          errors.password =
+            "Password must contain uppercase, lowercase, number, and special character";
+        }
+      }
     }
 
-    if (
-      touchedFields.confirmPassword &&
-      formData.password !== formData.confirmPassword
-    ) {
-      errors.confirmPassword = "Passwords do not match";
+    // Confirm password validation
+    if (showAllErrors || touchedFields.confirmPassword) {
+      if (!formData.confirmPassword) {
+        errors.confirmPassword = "Please confirm your password";
+      } else if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = "Passwords do not match";
+      }
     }
 
-    setFormErrors(errors);
+    // Terms validation
+    if (showAllErrors) {
+      if (!formData.agreeToTerms) {
+        errors.agreeToTerms = "You must agree to the terms of service";
+      }
+    }
 
-    // Check if form is valid (all fields filled, no errors, and at least one field has been touched)
-    const allFieldsFilled =
-      formData.name.trim() &&
-      formData.email &&
-      formData.password &&
-      formData.confirmPassword;
-    const noErrors = Object.keys(errors).length === 0;
-    const hasBeenTouched = Object.keys(touchedFields).length > 0;
-
-    const valid = allFieldsFilled && noErrors && hasBeenTouched;
-    setIsFormValid(valid);
-    return valid;
+    return errors;
   };
 
+  // Check if form is valid
+  const checkFormValidity = () => {
+    const hasName =
+      formData.name.trim().length >= 2 && /^[a-zA-Z\s'-]+$/.test(formData.name);
+    const hasValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+    const hasValidPassword =
+      formData.password.length >= 8 &&
+      /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(formData.password);
+    const passwordsMatch =
+      formData.password === formData.confirmPassword &&
+      formData.confirmPassword.length > 0;
+    const termsAccepted = formData.agreeToTerms;
+
+    return (
+      hasName &&
+      hasValidEmail &&
+      hasValidPassword &&
+      passwordsMatch &&
+      termsAccepted
+    );
+  };
+
+  // Update validation on field changes
   useEffect(() => {
-    validateForm();
     setPasswordStrength(calculatePasswordStrength(formData.password));
+    setFormErrors(validateForm(false));
+    setIsFormValid(checkFormValidity());
   }, [formData, touchedFields]);
 
   const getPasswordStrengthColor = () => {
-    if (passwordStrength <= 1) return "from-red-500 to-red-600";
-    if (passwordStrength <= 2) return "from-orange-500 to-orange-600";
-    if (passwordStrength <= 3) return "from-yellow-500 to-yellow-600";
-    if (passwordStrength <= 4) return "from-green-500 to-green-600";
-    return "from-emerald-500 to-emerald-600";
+    if (passwordStrength <= 1) return "text-red-400";
+    if (passwordStrength <= 2) return "text-orange-400";
+    if (passwordStrength <= 3) return "text-amber-400";
+    if (passwordStrength <= 4) return "text-emerald-400";
+    return "text-emerald-300";
   };
 
   const getPasswordStrengthText = () => {
-    if (passwordStrength <= 1) return "Weak";
-    if (passwordStrength <= 2) return "Fair";
-    if (passwordStrength <= 3) return "Good";
-    if (passwordStrength <= 4) return "Strong";
-    return "Very Strong";
+    if (passwordStrength <= 1) return "Very Weak";
+    if (passwordStrength <= 2) return "Weak";
+    if (passwordStrength <= 3) return "Fair";
+    if (passwordStrength <= 4) return "Good";
+    return "Excellent";
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
 
     // Mark field as touched when user starts typing
-    setTouchedFields((prev) => ({
-      ...prev,
-      [name]: true,
-    }));
+    if (value.length > 0 || type === "checkbox") {
+      setTouchedFields((prev) => ({
+        ...prev,
+        [name]: true,
+      }));
+    }
   };
 
   const handleBlur = (fieldName) => {
     setFocusedField(null);
-    // Mark field as touched when user leaves the field
     setTouchedFields((prev) => ({
       ...prev,
       [fieldName]: true,
@@ -166,25 +191,103 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Mark all fields as touched on submit attempt
-    setTouchedFields({
+    // Mark all fields as touched for final validation
+    const allTouched = {
       name: true,
       email: true,
       password: true,
       confirmPassword: true,
-    });
+      agreeToTerms: true,
+    };
+    setTouchedFields(allTouched);
 
-    if (!validateForm()) {
+    // Validate all fields
+    const allErrors = validateForm(true);
+    setFormErrors(allErrors);
+
+    if (Object.keys(allErrors).length > 0) {
       return;
     }
 
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const registrationData = {
+        name: formData.name.trim(),
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+        agreeToTerms: formData.agreeToTerms,
+      };
+
+      const result = await registerUser(registrationData);
+
+      if (result.success) {
+        setRegistrationSuccess(true);
+        // Auto-redirect after showing success message
+        setTimeout(() => {
+          navigate("/login", {
+            state: {
+              message:
+                "Registration successful! Please check your email to verify your account.",
+              email: formData.email,
+            },
+          });
+        }, 3000);
+      } else {
+        // Handle registration errors
+        if (result.error.includes("email")) {
+          setFormErrors({ email: result.error });
+        } else {
+          setFormErrors({ general: result.error });
+        }
+      }
+    } catch (error) {
+      console.error("Registration failed:", error);
+      setFormErrors({
+        general: "Registration failed. Please try again.",
+      });
+    } finally {
       setIsLoading(false);
-      console.log("Register attempt:", formData);
-    }, 3000);
+    }
   };
+
+  // Helper function to determine if field should show error styling
+  const shouldShowFieldError = (fieldName) => {
+    return touchedFields[fieldName] && formErrors[fieldName];
+  };
+
+  // Helper function to determine if field should show success styling
+  const shouldShowFieldSuccess = (fieldName) => {
+    return (
+      touchedFields[fieldName] && !formErrors[fieldName] && formData[fieldName]
+    );
+  };
+
+  // Show success message
+  if (registrationSuccess) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          background:
+            "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
+        }}
+      >
+        <div className="text-center">
+          <div className="text-6xl mb-6">✅</div>
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Registration Successful!
+          </h2>
+          <p className="text-slate-300 mb-6 max-w-md">
+            Please check your email to verify your account before logging in.
+          </p>
+          <div className="animate-pulse text-slate-400">
+            Redirecting to login page...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -194,25 +297,8 @@ const Register = () => {
           "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
       }}
     >
-      {/* Enhanced Background Animation */}
+      {/* Background animations */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Floating particles */}
-        {particles.map((particle) => (
-          <div
-            key={particle.id}
-            className="absolute rounded-full bg-white/5 animate-float"
-            style={{
-              left: `${particle.x}%`,
-              top: `${particle.y}%`,
-              width: `${particle.size}px`,
-              height: `${particle.size}px`,
-              animationDuration: `${particle.duration}s`,
-              animationDelay: `${particle.delay}s`,
-            }}
-          />
-        ))}
-
-        {/* Enhanced Gradient orbs - More visible */}
         <div
           className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full blur-3xl animate-pulse"
           style={{
@@ -227,52 +313,6 @@ const Register = () => {
               "radial-gradient(circle, rgba(148, 163, 184, 0.35) 0%, rgba(100, 116, 139, 0.18) 100%)",
           }}
         ></div>
-        <div
-          className="absolute top-1/3 left-1/3 w-96 h-96 rounded-full blur-3xl animate-pulse delay-500"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(71, 85, 105, 0.3) 0%, rgba(51, 65, 85, 0.15) 100%)",
-          }}
-        ></div>
-      </div>
-
-      {/* Floating testimonials - simplified and more elegant */}
-      <div
-        className="absolute top-16 left-8 backdrop-blur-sm rounded-xl p-4 text-white text-sm max-w-xs transform hover:scale-105 transition-all duration-500 hidden lg:block"
-        style={{
-          backgroundColor: "rgba(100, 116, 139, 0.2)",
-          border: "1px solid rgba(148, 163, 184, 0.3)",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        <div className="flex items-center mb-3">
-          {[...Array(5)].map((_, i) => (
-            <FaStar key={i} className="text-amber-400 text-sm mr-1" />
-          ))}
-        </div>
-        <p className="text-slate-200 font-medium">
-          "Amazing anime discovery platform!"
-        </p>
-        <p className="text-xs text-slate-400 mt-2">- Sarah K., Anime Fan</p>
-      </div>
-
-      <div
-        className="absolute bottom-16 right-8 backdrop-blur-sm rounded-xl p-4 text-white text-sm max-w-xs transform hover:scale-105 transition-all duration-500 hidden lg:block"
-        style={{
-          backgroundColor: "rgba(100, 116, 139, 0.2)",
-          border: "1px solid rgba(148, 163, 184, 0.3)",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        <div className="flex items-center mb-3">
-          {[...Array(5)].map((_, i) => (
-            <FaStar key={i} className="text-amber-400 text-sm mr-1" />
-          ))}
-        </div>
-        <p className="text-slate-200 font-medium">
-          "Found my new favorite series!"
-        </p>
-        <p className="text-xs text-slate-400 mt-2">- Alex M., Otaku</p>
       </div>
 
       <div
@@ -282,7 +322,6 @@ const Register = () => {
             : "translate-y-10 opacity-0"
         }`}
       >
-        {/* Main Register Card - Enhanced and simplified */}
         <div
           className="backdrop-blur-xl rounded-3xl shadow-2xl p-10 relative overflow-hidden"
           style={{
@@ -291,24 +330,8 @@ const Register = () => {
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
           }}
         >
-          {/* Simplified animated border */}
-          <div
-            className="absolute inset-0 rounded-3xl opacity-50 animate-pulse"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(100, 116, 139, 0.2) 0%, rgba(71, 85, 105, 0.3) 50%, rgba(51, 65, 85, 0.2) 100%)",
-            }}
-          ></div>
-          <div
-            className="absolute inset-[1px] rounded-3xl"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(32, 31, 49, 0.95) 0%, rgba(26, 24, 39, 0.98) 50%, rgba(21, 20, 32, 0.95) 100%)",
-            }}
-          ></div>
-
           <div className="relative z-10">
-            {/* Header - Simplified and more elegant */}
+            {/* Header */}
             <div
               className={`text-center mb-10 transition-all duration-700 delay-200 ${
                 animationStep >= 1
@@ -325,24 +348,21 @@ const Register = () => {
                 }}
               >
                 <FaUserPlus className="text-white text-3xl" />
-                <div
-                  className="absolute inset-0 rounded-full animate-ping opacity-20"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #64748b 0%, #475569 100%)",
-                  }}
-                ></div>
               </div>
               <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
                 Create Account
               </h2>
               <p className="text-slate-300 text-lg">Join our anime community</p>
-              <p className="text-slate-400 text-sm mt-1">
-                100K+ members worldwide
-              </p>
             </div>
 
-            {/* Register Form - Improved spacing */}
+            {/* Show general error */}
+            {formErrors.general && (
+              <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+                <p className="text-red-400 text-sm">{formErrors.general}</p>
+              </div>
+            )}
+
+            {/* Form */}
             <form
               onSubmit={handleSubmit}
               className={`space-y-8 transition-all duration-700 delay-400 ${
@@ -357,14 +377,8 @@ const Register = () => {
                   Full Name
                 </label>
                 <div className="relative">
-                  <div
-                    className={`absolute inset-y-0 left-0 w-12 flex items-center justify-center transition-colors duration-300 ${
-                      focusedField === "name"
-                        ? "text-slate-300"
-                        : "text-slate-400"
-                    }`}
-                  >
-                    <FaUser className="text-lg" />
+                  <div className="absolute inset-y-0 left-0 w-12 flex items-center justify-center">
+                    <FaUser className="text-slate-400" />
                   </div>
                   <input
                     type="text"
@@ -376,55 +390,43 @@ const Register = () => {
                     placeholder="Enter your full name"
                     required
                     className={`w-full pl-12 pr-12 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg ${
-                      formErrors.name
+                      shouldShowFieldError("name")
                         ? "border-red-400/60 focus:ring-red-400/50"
-                        : formData.name && !formErrors.name
+                        : shouldShowFieldSuccess("name")
                         ? "border-emerald-400/60 focus:ring-emerald-400/50"
                         : "border-slate-500/30 focus:ring-slate-400/50"
                     }`}
                     style={{
                       backgroundColor: "rgba(71, 85, 105, 0.25)",
-                      border: formErrors.name
+                      border: shouldShowFieldError("name")
                         ? "2px solid rgba(248, 113, 113, 0.6)"
-                        : formData.name &&
-                          !formErrors.name &&
-                          touchedFields.name
+                        : shouldShowFieldSuccess("name")
                         ? "2px solid rgba(52, 211, 153, 0.6)"
                         : "2px solid rgba(100, 116, 139, 0.3)",
                     }}
                   />
                   <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center">
-                    {formData.name &&
-                      !formErrors.name &&
-                      touchedFields.name && (
-                        <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
-                      )}
-                    {formErrors.name && (
-                      <FaTimes className="text-red-400 text-lg animate-fadeIn" />
+                    {shouldShowFieldSuccess("name") && (
+                      <FaCheck className="text-emerald-400 text-lg" />
+                    )}
+                    {shouldShowFieldError("name") && (
+                      <FaTimes className="text-red-400 text-lg" />
                     )}
                   </div>
                 </div>
-                {formErrors.name && (
-                  <p className="mt-2 text-sm text-red-400 animate-slideDown pl-1">
-                    {formErrors.name}
-                  </p>
+                {shouldShowFieldError("name") && (
+                  <p className="mt-2 text-sm text-red-400">{formErrors.name}</p>
                 )}
               </div>
 
-              {/* Email Field - Perfect icon alignment */}
+              {/* Email Field */}
               <div className="relative group">
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Email Address
                 </label>
                 <div className="relative">
-                  <div
-                    className={`absolute inset-y-0 left-0 w-12 flex items-center justify-center transition-colors duration-300 ${
-                      focusedField === "email"
-                        ? "text-slate-300"
-                        : "text-slate-400"
-                    }`}
-                  >
-                    <FaEnvelope className="text-lg" />
+                  <div className="absolute inset-y-0 left-0 w-12 flex items-center justify-center">
+                    <FaEnvelope className="text-slate-400" />
                   </div>
                   <input
                     type="email"
@@ -436,55 +438,45 @@ const Register = () => {
                     placeholder="Enter your email address"
                     required
                     className={`w-full pl-12 pr-12 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg ${
-                      formErrors.email
+                      shouldShowFieldError("email")
                         ? "border-red-400/60 focus:ring-red-400/50"
-                        : formData.email && !formErrors.email
+                        : shouldShowFieldSuccess("email")
                         ? "border-emerald-400/60 focus:ring-emerald-400/50"
                         : "border-slate-500/30 focus:ring-slate-400/50"
                     }`}
                     style={{
                       backgroundColor: "rgba(71, 85, 105, 0.25)",
-                      border: formErrors.email
+                      border: shouldShowFieldError("email")
                         ? "2px solid rgba(248, 113, 113, 0.6)"
-                        : formData.email &&
-                          !formErrors.email &&
-                          touchedFields.email
+                        : shouldShowFieldSuccess("email")
                         ? "2px solid rgba(52, 211, 153, 0.6)"
                         : "2px solid rgba(100, 116, 139, 0.3)",
                     }}
                   />
                   <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center">
-                    {formData.email &&
-                      !formErrors.email &&
-                      touchedFields.email && (
-                        <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
-                      )}
-                    {formErrors.email && (
-                      <FaTimes className="text-red-400 text-lg animate-fadeIn" />
+                    {shouldShowFieldSuccess("email") && (
+                      <FaCheck className="text-emerald-400 text-lg" />
+                    )}
+                    {shouldShowFieldError("email") && (
+                      <FaTimes className="text-red-400 text-lg" />
                     )}
                   </div>
                 </div>
-                {formErrors.email && (
-                  <p className="mt-2 text-sm text-red-400 animate-slideDown pl-1">
+                {shouldShowFieldError("email") && (
+                  <p className="mt-2 text-sm text-red-400">
                     {formErrors.email}
                   </p>
                 )}
               </div>
 
-              {/* Password Field - Perfect icon alignment */}
+              {/* Password Field */}
               <div className="relative group">
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Password
                 </label>
                 <div className="relative">
-                  <div
-                    className={`absolute inset-y-0 left-0 w-12 flex items-center justify-center transition-colors duration-300 ${
-                      focusedField === "password"
-                        ? "text-slate-300"
-                        : "text-slate-400"
-                    }`}
-                  >
-                    <FaLock className="text-lg" />
+                  <div className="absolute inset-y-0 left-0 w-12 flex items-center justify-center">
+                    <FaLock className="text-slate-400" />
                   </div>
                   <input
                     type={showPassword ? "text" : "password"}
@@ -495,39 +487,31 @@ const Register = () => {
                     onBlur={() => handleBlur("password")}
                     placeholder="Create a strong password"
                     required
-                    className={`w-full pl-12 pr-20 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg`}
+                    className="w-full pl-12 pr-20 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg"
                     style={{
                       backgroundColor: "rgba(71, 85, 105, 0.25)",
-                      border: formErrors.password
+                      border: shouldShowFieldError("password")
                         ? "2px solid rgba(248, 113, 113, 0.6)"
-                        : formData.password &&
-                          !formErrors.password &&
-                          touchedFields.password
+                        : shouldShowFieldSuccess("password")
                         ? "2px solid rgba(52, 211, 153, 0.6)"
                         : "2px solid rgba(100, 116, 139, 0.3)",
                     }}
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 space-x-2">
-                    {formData.password &&
-                      !formErrors.password &&
-                      touchedFields.password && (
-                        <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
-                      )}
+                    {shouldShowFieldSuccess("password") && (
+                      <FaCheck className="text-emerald-400 text-lg" />
+                    )}
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="text-slate-400 hover:text-white transition-colors focus:outline-none p-1"
                     >
-                      {showPassword ? (
-                        <FaEyeSlash className="text-lg" />
-                      ) : (
-                        <FaEye className="text-lg" />
-                      )}
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
                     </button>
                   </div>
                 </div>
 
-                {/* Enhanced Password Strength Indicator */}
+                {/* Password Strength Indicator */}
                 {formData.password && (
                   <div className="mt-3 space-y-3">
                     <div className="flex items-center justify-between">
@@ -535,17 +519,7 @@ const Register = () => {
                         Password Strength:
                       </span>
                       <span
-                        className={`text-sm font-bold ${
-                          passwordStrength <= 1
-                            ? "text-red-400"
-                            : passwordStrength <= 2
-                            ? "text-orange-400"
-                            : passwordStrength <= 3
-                            ? "text-amber-400"
-                            : passwordStrength <= 4
-                            ? "text-emerald-400"
-                            : "text-emerald-300"
-                        }`}
+                        className={`text-sm font-bold ${getPasswordStrengthColor()}`}
                       >
                         {getPasswordStrengthText()}
                       </span>
@@ -555,7 +529,7 @@ const Register = () => {
                       style={{ backgroundColor: "rgba(71, 85, 105, 0.4)" }}
                     >
                       <div
-                        className={`h-full transition-all duration-700 ease-out rounded-full`}
+                        className="h-full transition-all duration-700 ease-out rounded-full"
                         style={{
                           width: `${(passwordStrength / 5) * 100}%`,
                           background:
@@ -574,27 +548,21 @@ const Register = () => {
                   </div>
                 )}
 
-                {formErrors.password && (
-                  <p className="mt-2 text-sm text-red-400 animate-slideDown pl-1">
+                {shouldShowFieldError("password") && (
+                  <p className="mt-2 text-sm text-red-400">
                     {formErrors.password}
                   </p>
                 )}
               </div>
 
-              {/* Confirm Password Field - Perfect icon alignment */}
+              {/* Confirm Password Field */}
               <div className="relative group">
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <div
-                    className={`absolute inset-y-0 left-0 w-12 flex items-center justify-center transition-colors duration-300 ${
-                      focusedField === "confirmPassword"
-                        ? "text-slate-300"
-                        : "text-slate-400"
-                    }`}
-                  >
-                    <FaShieldAlt className="text-lg" />
+                  <div className="absolute inset-y-0 left-0 w-12 flex items-center justify-center">
+                    <FaShieldAlt className="text-slate-400" />
                   </div>
                   <input
                     type={showConfirmPassword ? "text" : "password"}
@@ -605,28 +573,24 @@ const Register = () => {
                     onBlur={() => handleBlur("confirmPassword")}
                     placeholder="Confirm your password"
                     required
-                    className={`w-full pl-12 pr-20 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg`}
+                    className="w-full pl-12 pr-20 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg"
                     style={{
                       backgroundColor: "rgba(71, 85, 105, 0.25)",
-                      border: formErrors.confirmPassword
+                      border: shouldShowFieldError("confirmPassword")
                         ? "2px solid rgba(248, 113, 113, 0.6)"
-                        : formData.confirmPassword &&
-                          !formErrors.confirmPassword &&
-                          formData.password === formData.confirmPassword &&
-                          touchedFields.confirmPassword
+                        : shouldShowFieldSuccess("confirmPassword") &&
+                          formData.password === formData.confirmPassword
                         ? "2px solid rgba(52, 211, 153, 0.6)"
                         : "2px solid rgba(100, 116, 139, 0.3)",
                     }}
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 space-x-2">
-                    {formData.confirmPassword &&
-                      !formErrors.confirmPassword &&
-                      formData.password === formData.confirmPassword &&
-                      touchedFields.confirmPassword && (
-                        <FaCheck className="text-emerald-400 text-lg animate-fadeIn" />
+                    {shouldShowFieldSuccess("confirmPassword") &&
+                      formData.password === formData.confirmPassword && (
+                        <FaCheck className="text-emerald-400 text-lg" />
                       )}
-                    {formErrors.confirmPassword && (
-                      <FaTimes className="text-red-400 text-lg animate-fadeIn" />
+                    {shouldShowFieldError("confirmPassword") && (
+                      <FaTimes className="text-red-400 text-lg" />
                     )}
                     <button
                       type="button"
@@ -635,22 +599,18 @@ const Register = () => {
                       }
                       className="text-slate-400 hover:text-white transition-colors focus:outline-none p-1"
                     >
-                      {showConfirmPassword ? (
-                        <FaEyeSlash className="text-lg" />
-                      ) : (
-                        <FaEye className="text-lg" />
-                      )}
+                      {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                     </button>
                   </div>
                 </div>
-                {formErrors.confirmPassword && (
-                  <p className="mt-2 text-sm text-red-400 animate-slideDown pl-1">
+                {shouldShowFieldError("confirmPassword") && (
+                  <p className="mt-2 text-sm text-red-400">
                     {formErrors.confirmPassword}
                   </p>
                 )}
               </div>
 
-              {/* Elegant Terms and Conditions */}
+              {/* Terms Checkbox */}
               <div
                 className="flex items-start space-x-4 p-6 rounded-2xl border"
                 style={{
@@ -660,6 +620,9 @@ const Register = () => {
               >
                 <input
                   type="checkbox"
+                  name="agreeToTerms"
+                  checked={formData.agreeToTerms}
+                  onChange={handleChange}
                   required
                   className="w-5 h-5 mt-1 bg-transparent border-2 rounded focus:ring-2 transition-all duration-300"
                   style={{
@@ -684,10 +647,15 @@ const Register = () => {
                       Privacy Policy
                     </Link>
                   </p>
+                  {formErrors.agreeToTerms && (
+                    <p className="mt-1 text-red-400 text-xs">
+                      {formErrors.agreeToTerms}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Enhanced Register Button */}
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading || !isFormValid}
@@ -707,15 +675,6 @@ const Register = () => {
                       : "0 15px 35px rgba(100, 116, 139, 0.4)",
                 }}
               >
-                {/* Button background animation */}
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-xl"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #94a3b8 0%, #64748b 100%)",
-                  }}
-                ></div>
-
                 <div className="relative flex items-center justify-center text-white">
                   {isLoading ? (
                     <>
@@ -820,7 +779,7 @@ const Register = () => {
           </div>
         </div>
 
-        {/* Elegant Footer */}
+        {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-slate-500 text-sm flex items-center justify-center">
             <FaShieldAlt className="mr-2 text-slate-400" />© 2025 Anime Info.

@@ -98,10 +98,21 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    otpCode: String,
+    otpExpires: Date,
+    otpAttempts: {
+      type: Number,
+      default: 0,
+    },
+    otpLastAttempt: Date,
     lastLogin: Date,
     createdAt: {
       type: Date,
       default: Date.now,
+    },
+    previousPassword: {
+      type: String,
+      select: false,
     },
   },
   {
@@ -162,6 +173,55 @@ userSchema.methods.getResetPasswordToken = function () {
   this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
 
   return resetToken;
+};
+
+// Generate OTP code
+userSchema.methods.generateOTP = function () {
+  const crypto = require("crypto");
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Hash the OTP before storing
+  this.otpCode = crypto.createHash("sha256").update(otp).digest("hex");
+  this.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  this.otpAttempts = 0;
+  this.otpLastAttempt = undefined;
+
+  return otp; // Return plain OTP for sending via email
+};
+
+// Verify OTP code
+userSchema.methods.verifyOTP = function (enteredOTP) {
+  const crypto = require("crypto");
+  const hashedOTP = crypto.createHash("sha256").update(enteredOTP).digest("hex");
+
+  // Check if OTP is expired
+  if (this.otpExpires < Date.now()) {
+    return { success: false, error: "OTP has expired" };
+  }
+
+  // Check attempt limits (max 5 attempts)
+  if (this.otpAttempts >= 5) {
+    return { success: false, error: "Too many failed attempts. Please request a new OTP." };
+  }
+
+  // Increment attempts
+  this.otpAttempts += 1;
+  this.otpLastAttempt = Date.now();
+
+  // Verify OTP
+  if (this.otpCode === hashedOTP) {
+    // Clear OTP data after successful verification
+    this.otpCode = undefined;
+    this.otpExpires = undefined;
+    this.otpAttempts = 0;
+    this.otpLastAttempt = undefined;
+
+    return { success: true };
+  }
+
+  return { success: false, error: "Invalid OTP code" };
 };
 
 module.exports = mongoose.model("User", userSchema);

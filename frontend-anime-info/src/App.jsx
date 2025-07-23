@@ -14,6 +14,7 @@ import Navbar from "./components/Navbar";
 import Register from "./components/Register";
 import Search from "./components/Search";
 import { AuthProvider } from "./context/AuthContext";
+import OTPVerification from "./components/OTPVerification";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             {/* Authentication routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-otp" element={<OTPVerification />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route
               path="/verify-email/:token"
