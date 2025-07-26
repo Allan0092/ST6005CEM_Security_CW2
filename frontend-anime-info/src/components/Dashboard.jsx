@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { FaHeart, FaPlay, FaSearch, FaStar } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import Footer from "./Footer";
 
 const Dashboard = () => {
-  const [user] = useState({
-    name: "John Doe",
-    email: "john@example.com",
-    avatar: "/images/avatar-placeholder.jpg",
-  });
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   const [featuredAnime] = useState([
     {
@@ -32,6 +30,34 @@ const Dashboard = () => {
       year: 2023,
     },
   ]);
+
+  // Function to get the welcome message based on authentication status
+  const getWelcomeMessage = () => {
+    if (isLoading) {
+      return "Loading...";
+    }
+
+    if (isAuthenticated && user) {
+      // Extract first name if full name is provided
+      const firstName = user.name.split(" ")[0];
+      return `Welcome back, ${firstName}!`;
+    }
+
+    return "Welcome to AnimeInfo!";
+  };
+
+  // Function to get the subtitle message
+  const getSubtitleMessage = () => {
+    if (isLoading) {
+      return "Please wait while we load your profile...";
+    }
+
+    if (isAuthenticated && user) {
+      return "Discover amazing anime and track your favorites";
+    }
+
+    return "Your gateway to the world of anime. Sign in to track your favorites!";
+  };
 
   return (
     <div
@@ -71,46 +97,75 @@ const Dashboard = () => {
         <div className="mb-16">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent">
-              Welcome back, {user.name}!
+              {getWelcomeMessage()}
             </h2>
-            <p className="text-2xl text-slate-300">
-              Discover amazing anime and track your favorites
-            </p>
+            <p className="text-2xl text-slate-300">{getSubtitleMessage()}</p>
+
+            {/* Show login prompt for unauthenticated users */}
+            {!isLoading && !isAuthenticated && (
+              <div className="mt-8">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center px-6 py-3 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 mr-4"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+                    boxShadow: "0 10px 25px rgba(100, 116, 139, 0.3)",
+                  }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center px-6 py-3 text-slate-300 font-semibold rounded-lg border border-slate-600 hover:border-slate-500 hover:text-white transition-all duration-300"
+                >
+                  Create Account
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 max-w-6xl mx-auto">
-            <div
-              className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(71, 85, 105, 0.2)",
-                border: "1px solid rgba(148, 163, 184, 0.3)",
-              }}
-            >
-              <div className="text-4xl font-bold text-slate-200 mb-3">156</div>
-              <div className="text-slate-300 text-lg">Anime Watched</div>
+          {isAuthenticated && user && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 max-w-6xl mx-auto">
+              <div
+                className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
+                style={{
+                  backgroundColor: "rgba(71, 85, 105, 0.2)",
+                  border: "1px solid rgba(148, 163, 184, 0.3)",
+                }}
+              >
+                <div className="text-4xl font-bold text-slate-200 mb-3">
+                  {user.stats?.totalWatched || 0}
+                </div>
+                <div className="text-slate-300 text-lg">Anime Watched</div>
+              </div>
+              <div
+                className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
+                style={{
+                  backgroundColor: "rgba(71, 85, 105, 0.2)",
+                  border: "1px solid rgba(148, 163, 184, 0.3)",
+                }}
+              >
+                <div className="text-4xl font-bold text-red-400 mb-3">
+                  {user.stats?.totalFavorites || 0}
+                </div>
+                <div className="text-slate-300 text-lg">Favorites</div>
+              </div>
+              <div
+                className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
+                style={{
+                  backgroundColor: "rgba(71, 85, 105, 0.2)",
+                  border: "1px solid rgba(148, 163, 184, 0.3)",
+                }}
+              >
+                <div className="text-4xl font-bold text-slate-200 mb-3">
+                  {user.stats?.averageRating || "0.0"}
+                </div>
+                <div className="text-slate-300 text-lg">Avg Rating</div>
+              </div>
             </div>
-            <div
-              className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(71, 85, 105, 0.2)",
-                border: "1px solid rgba(148, 163, 184, 0.3)",
-              }}
-            >
-              <div className="text-4xl font-bold text-red-400 mb-3">23</div>
-              <div className="text-slate-300 text-lg">Favorites</div>
-            </div>
-            <div
-              className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(71, 85, 105, 0.2)",
-                border: "1px solid rgba(148, 163, 184, 0.3)",
-              }}
-            >
-              <div className="text-4xl font-bold text-slate-200 mb-3">8.7</div>
-              <div className="text-slate-300 text-lg">Avg Rating</div>
-            </div>
-          </div>
+          )}
 
           {/* Featured Anime */}
           <div className="mb-20">
@@ -195,12 +250,15 @@ const Dashboard = () => {
               <FaHeart className="text-4xl mb-6 mx-auto" />
               <h3 className="text-2xl font-semibold mb-3">My Favorites</h3>
               <p className="text-red-100 text-lg">
-                View your saved anime collection
+                {isAuthenticated
+                  ? "View your saved anime collection"
+                  : "Sign in to save your favorite anime"}
               </p>
             </Link>
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

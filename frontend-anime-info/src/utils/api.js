@@ -3,8 +3,8 @@ import CryptoJS from "crypto-js";
 // Updated API base URL to use HTTPS
 const API_BASE_URL = "https://localhost:3000/api/v1";
 
-// Encryption key 
-const ENCRYPTION_KEY = "your-frontend-encryption-key-2025";
+// Encryption key, should match with the backend
+const ENCRYPTION_KEY = "secret-key"; // TODO: change key, store somewhere safe after testing.
 
 // Encrypt password before sending to backend
 const encryptPassword = (password) => {
@@ -19,7 +19,7 @@ const apiCall = async (endpoint, options = {}) => {
     headers: {
       "Content-Type": "application/json",
     },
-    credentials: "include", 
+    credentials: "include",
   };
 
   const config = { ...defaultOptions, ...options };
@@ -73,7 +73,7 @@ export const authAPI = {
     return apiCall("/auth/logout", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });
@@ -100,7 +100,7 @@ export const authAPI = {
   getMe: async () => {
     const token = localStorage.getItem("token");
     console.log("Getting user profile with token:", token);
-    
+
     if (!token) {
       throw new Error("No token found");
     }
@@ -108,7 +108,7 @@ export const authAPI = {
     return apiCall("/auth/me", {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });
@@ -123,7 +123,7 @@ export const authAPI = {
 
   resendOTP: async (data) => {
     return apiCall("/auth/resend-otp", {
-      method: "POST", 
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
