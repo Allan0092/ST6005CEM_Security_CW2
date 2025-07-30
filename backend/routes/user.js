@@ -4,7 +4,26 @@ const {
   updateProfile,
   deleteProfile,
   uploadAvatar,
+  getUserStats,
+  getWatchList,
+  updateWatchList,
+  removeFromWatchList,
+  getFavorites,
+  addToFavorites,
+  removeFromFavorites,
+  getRecommendations,
+  updatePreferences,
+  getUserActivity,
+  followUser,
+  unfollowUser,
+  getFollowers,
+  getFollowing,
 } = require("../controller/UserController");
+const { protect, authorize } = require("../security/authMiddleware");
+const {
+  validateUpdateProfile,
+  validateWatchList,
+} = require("../validation/userValidation");
 const { upload } = require("../controller/fileUpload");
 
 const router = express.Router();
@@ -16,9 +35,35 @@ router.use(protect);
 router
   .route("/profile")
   .get(getProfile)
-  .put(updateProfile)
+  .put(validateUpdateProfile, updateProfile)
   .delete(deleteProfile);
 
 router.post("/avatar", upload.single("avatar"), uploadAvatar);
+router.get("/stats", getUserStats);
+router.get("/activity", getUserActivity);
+
+// Watch list routes
+router
+  .route("/watchlist")
+  .get(getWatchList)
+  .post(validateWatchList, updateWatchList);
+
+router.delete("/watchlist/:animeId", removeFromWatchList);
+
+// Favorites routes
+router.route("/favorites").get(getFavorites).post(addToFavorites);
+router.delete("/favorites/:animeId", removeFromFavorites);
+
+// Recommendations
+router.get("/recommendations", getRecommendations);
+
+// User preferences
+router.put("/preferences", updatePreferences);
+
+// Social features
+router.post("/follow/:userId", followUser);
+router.delete("/follow/:userId", unfollowUser);
+router.get("/followers", getFollowers);
+router.get("/following", getFollowing);
 
 module.exports = router;

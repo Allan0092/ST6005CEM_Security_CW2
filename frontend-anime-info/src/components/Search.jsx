@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { FaArrowLeft, FaHeart, FaSearch, FaStar } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { FaHeart, FaSearch, FaStar } from "react-icons/fa";
 
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -8,7 +7,7 @@ const Search = () => {
     {
       id: 1,
       title: "Attack on Titan",
-      image: "https://via.placeholder.com/300x400",
+      image: "/images/anime-placeholder.jpg",
       rating: 9.0,
       year: 2023,
       genre: "Action, Drama",
@@ -16,7 +15,7 @@ const Search = () => {
     {
       id: 2,
       title: "Demon Slayer",
-      image: "https://via.placeholder.com/300x400",
+      image: "/images/anime-placeholder.jpg",
       rating: 8.7,
       year: 2023,
       genre: "Action, Supernatural",
@@ -24,7 +23,7 @@ const Search = () => {
     {
       id: 3,
       title: "My Hero Academia",
-      image: "https://via.placeholder.com/300x400",
+      image: "/images/anime-placeholder.jpg",
       rating: 8.5,
       year: 2023,
       genre: "Action, School",
@@ -32,7 +31,7 @@ const Search = () => {
     {
       id: 4,
       title: "One Piece",
-      image: "https://via.placeholder.com/300x400",
+      image: "/images/anime-placeholder.jpg",
       rating: 9.2,
       year: 2023,
       genre: "Adventure, Comedy",
@@ -80,24 +79,19 @@ const Search = () => {
 
       {/* Header */}
       <div
-        className="backdrop-blur-lg border-b p-4 relative z-10"
+        className="backdrop-blur-lg border-b p-6 relative z-10"
         style={{
           backgroundColor: "rgba(71, 85, 105, 0.15)",
           borderColor: "rgba(148, 163, 184, 0.2)",
         }}
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center text-slate-400 hover:text-white transition-colors"
-          >
-            <FaArrowLeft className="mr-2" />
-            Back to Dashboard
-          </Link>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent">
             Search Anime
           </h1>
-          <div></div>
+          <p className="text-slate-400 mt-2">
+            Discover your next favorite anime
+          </p>
         </div>
       </div>
 
@@ -151,6 +145,9 @@ const Search = () => {
                     src={anime.image}
                     alt={anime.title}
                     className="w-full h-64 object-cover"
+                    onError={(e) => {
+                      e.target.src = "/images/anime-placeholder.jpg";
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                     <div className="flex space-x-3">
@@ -160,10 +157,14 @@ const Search = () => {
                           background:
                             "linear-gradient(135deg, #64748b 0%, #475569 100%)",
                         }}
+                        title="View Details"
                       >
                         <FaStar />
                       </button>
-                      <button className="bg-red-600 hover:bg-red-700 text-white rounded-full p-3 transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                      <button
+                        className="bg-red-600 hover:bg-red-700 text-white rounded-full p-3 transform scale-90 group-hover:scale-100 transition-transform duration-300"
+                        title="Add to Favorites"
+                      >
                         <FaHeart />
                       </button>
                     </div>

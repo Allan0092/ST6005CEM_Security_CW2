@@ -79,7 +79,190 @@ const validateUpdateProfile = (req, res, next) => {
   next();
 };
 
+/**
+ * Validate watch list data
+ */
+const validateWatchList = (req, res, next) => {
+  const schema = Joi.object({
+    animeId: Joi.string()
+      .required()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .messages({
+        "string.empty": "Anime ID is required",
+        "string.pattern.base": "Invalid anime ID format",
+      }),
+    status: Joi.string()
+      .valid("watching", "completed", "plan-to-watch", "dropped", "on-hold")
+      .required()
+      .messages({
+        "string.empty": "Status is required",
+        "any.only":
+          "Status must be one of: watching, completed, plan-to-watch, dropped, on-hold",
+      }),
+    rating: Joi.number().integer().min(1).max(10).optional().messages({
+      "number.min": "Rating must be at least 1",
+      "number.max": "Rating cannot exceed 10",
+      "number.integer": "Rating must be a whole number",
+    }),
+    progress: Joi.object({
+      episodesWatched: Joi.number().integer().min(0).optional().messages({
+        "number.min": "Episodes watched cannot be negative",
+        "number.integer": "Episodes watched must be a whole number",
+      }),
+    }).optional(),
+    notes: Joi.string().trim().max(500).optional().messages({
+      "string.max": "Notes cannot exceed 500 characters",
+    }),
+    favorite: Joi.boolean().optional(),
+    priority: Joi.string().valid("low", "medium", "high").optional().messages({
+      "any.only": "Priority must be one of: low, medium, high",
+    }),
+    startDate: Joi.date().optional(),
+    endDate: Joi.date().optional(),
+    rewatching: Joi.boolean().optional(),
+    tags: Joi.array()
+      .items(Joi.string().trim().max(20))
+      .max(10)
+      .optional()
+      .messages({
+        "array.max": "Cannot have more than 10 tags",
+      }),
+  }).options({
+    stripUnknown: true,
+    abortEarly: false,
+  });
+
+  const { error, value } = schema.validate(req.body);
+
+  if (error) {
+    const errors = {};
+    error.details.forEach((detail) => {
+      const field = detail.path.join(".");
+      errors[field] = detail.message;
+    });
+
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors,
+      data: null,
+    });
+  }
+
+  // Additional validation: end date should be after start date
+  if (value.startDate && value.endDate && value.startDate >= value.endDate) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: {
+        endDate: "End date must be after start date",
+      },
+      data: null,
+    });
+  }
+
+  req.validatedData = value;
+  next();
+};
+
+/**
+ * Validate add to favorites
+ */
+const validateAddFavorite = (req, res, next) => {
+  const schema = Joi.object({
+    animeId: Joi.string()
+      .required()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .messages({
+        "string.empty": "Anime ID is required",
+        "string.pattern.base": "Invalid anime ID format",
+      }),
+  }).options({
+    stripUnknown: true,
+    abortEarly: false,
+  });
+
+  const { error, value } = schema.validate(req.body);
+
+  if (error) {
+    const errors = {};
+    error.details.forEach((detail) => {
+      const field = detail.path[0];
+      errors[field] = detail.message;
+    });
+
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors,
+      data: null,
+    });
+  }
+
+  req.validatedData = value;
+  next();
+};
+
+/**
+ * Validate preferences update
+ */
+const validatePreferences = (req, res, next) => {
+  const schema = Joi.object({
+    preferredGenres: Joi.array()
+      .items(Joi.string())
+      .max(10)
+      .optional()
+      .messages({
+        "array.max": "Cannot select more than 10 preferred genres",
+      }),
+    marketingEmails: Joi.boolean().optional(),
+    language: Joi.string()
+      .valid("en", "ja", "es", "fr", "de")
+      .optional()
+      .messages({
+        "any.only": "Language must be one of: en, ja, es, fr, de",
+      }),
+    theme: Joi.string().valid("light", "dark", "auto").optional().messages({
+      "any.only": "Theme must be one of: light, dark, auto",
+    }),
+    autoplay: Joi.boolean().optional(),
+    showAdultContent: Joi.boolean().optional(),
+    defaultWatchStatus: Joi.string()
+      .valid("watching", "plan-to-watch")
+      .optional()
+      .messages({
+        "any.only":
+          "Default watch status must be either watching or plan-to-watch",
+      }),
+  }).options({
+    stripUnknown: true,
+    abortEarly: false,
+  });
+
+  const { error, value } = schema.validate(req.body);
+
+  if (error) {
+    const errors = {};
+    error.details.forEach((detail) => {
+      const field = detail.path.join(".");
+      errors[field] = detail.message;
+    });
+
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors,
+      data: null,
+    });
+  }
+
+  req.validatedData = value;
+  next();
+};
+
 module.exports = {
   validateUpdateProfile,
+  validateWatchList,
+  validateAddFavorite,
+  validatePreferences,
 };
-// TODO: Undo Ancher Point!!
