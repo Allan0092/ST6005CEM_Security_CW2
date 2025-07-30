@@ -545,6 +545,128 @@ const removeFromFavorites = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Update user email
+ * @route   PUT /api/v1/users/email
+ * @access  Private
+ */
+const updateEmail = async (req, res) => {
+  try {
+    const { newEmail, password } = req.validatedData;
+    const userId = req.user.id;
+
+    // Find user and include password for verification
+    const user = await User.findById(userId).select("+password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+        errors: { user: "User not found" },
+        data: null,
+      });
+    }
+
+    // Verify current password
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid current password",
+        errors: { password: "Current password is incorrect" },
+        data: null,
+      });
+    }
+
+    // Check if new email is already in use
+    const existingUser = await User.findOne({ email: newEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already in use",
+        errors: { newEmail: "This email is already registered" },
+        data: null,
+      });
+    }
+
+    // Generate email verification token
+    const crypto = require("crypto");
+    const verificationToken = crypto.randomBytes(20).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(verificationToken)
+      .digest("hex");
+
+    // Update user with new email and verification token
+    user.email = newEmail;
+    user.isEmailVerified = false;
+    user.emailVerificationToken = hashedToken;
+    await user.save();
+
+    // Send verification email
+    try {
+      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+      const message = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #64748b; text-align: center;">Email Verification</h1>
+          <div style="background: linear-gradient(135deg, #64748b 0%, #475569 100%); padding: 30px; border-radius: 10px; text-align: center;">
+            <h2 style="color: white; margin-bottom: 20px;">Verify Your New Email</h2>
+            <p style="color: white; margin-bottom: 20px;">
+              You have updated your email address. Please click the button below to verify your new email.
+            </p>
+            <a href="${verificationUrl}" style="display: inline-block; background: white; color: #64748b; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0;">
+              Verify Email
+            </a>
+            <p style="color: white; font-size: 14px; margin-top: 20px;">
+              If the button doesn't work, copy this link: ${verificationUrl}
+            </p>
+          </div>
+        </div>
+      `;
+
+      await sendEmail({
+        email: newEmail,
+        subject: "AnimeInfo - Verify Your New Email",
+        message,
+      });
+
+      res.status(200).json({
+        success: true,
+        message:
+          "Email updated successfully. Please check your new email for verification.",
+        data: {
+          email: newEmail,
+          isEmailVerified: false,
+        },
+      });
+    } catch (emailError) {
+      console.error("Verification email sending failed:", emailError);
+
+      // Revert email change if email fails
+      user.email = req.user.email;
+      user.isEmailVerified = req.user.isEmailVerified;
+      user.emailVerificationToken = undefined;
+      await user.save();
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send verification email",
+        errors: { email: "Could not send verification email" },
+        data: null,
+      });
+    }
+  } catch (error) {
+    console.error("Update email error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update email",
+      errors: { server: "Internal server error" },
+      data: null,
+    });
+  }
+};
+
 // Placeholder implementations for remaining functions
 const getRecommendations = async (req, res) => {
   res.status(200).json({
@@ -640,4 +762,5 @@ module.exports = {
   unfollowUser,
   getFollowers,
   getFollowing,
+  updateEmail,
 };

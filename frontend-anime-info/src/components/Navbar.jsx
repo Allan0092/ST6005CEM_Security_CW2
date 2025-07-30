@@ -110,9 +110,13 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 {/* Authenticated User Info */}
-                <div className="flex items-center text-white">
+                <Link
+                  to="/profile"
+                  className="flex items-center text-white hover:bg-white/10 rounded-lg p-2 transition-all duration-300 group"
+                  title="Go to Profile"
+                >
                   <img
-                    className="h-10 w-10 rounded-full border-2 border-slate-400/50 hover:border-slate-300 transition-colors object-cover"
+                    className="h-10 w-10 rounded-full border-2 border-slate-400/50 group-hover:border-slate-300 transition-colors object-cover"
                     src={getAvatarUrl(user?.avatar)}
                     alt={user?.name || "User"}
                     onError={(e) => {
@@ -121,14 +125,14 @@ const Navbar = () => {
                     }}
                   />
                   <div className="ml-3 hidden sm:block">
-                    <span className="text-sm font-medium text-slate-100">
+                    <span className="text-sm font-medium text-slate-100 group-hover:text-white transition-colors">
                       {user?.name || "Loading..."}
                     </span>
-                    <p className="text-xs text-slate-300">
+                    <p className="text-xs text-slate-300 group-hover:text-slate-200 transition-colors">
                       {user?.email || ""}
                     </p>
                   </div>
-                </div>
+                </Link>
 
                 {/* Logout Button */}
                 <button
@@ -230,7 +234,11 @@ const Navbar = () => {
                 {isAuthenticated ? (
                   <>
                     {/* User Info */}
-                    <div className="flex items-center px-4 py-2 mb-3">
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center px-4 py-2 mb-3 rounded-lg hover:bg-white/10 transition-colors group"
+                    >
                       <img
                         className="h-8 w-8 rounded-full object-cover"
                         src={getAvatarUrl(user?.avatar)}
@@ -240,14 +248,14 @@ const Navbar = () => {
                         }}
                       />
                       <div className="ml-3">
-                        <p className="text-sm font-medium text-slate-100">
+                        <p className="text-sm font-medium text-slate-100 group-hover:text-white transition-colors">
                           {user?.name || "Loading..."}
                         </p>
-                        <p className="text-xs text-slate-300">
+                        <p className="text-xs text-slate-300 group-hover:text-slate-200 transition-colors">
                           {user?.email || ""}
                         </p>
                       </div>
-                    </div>
+                    </Link>
                     {/* Logout Button */}
                     <button
                       onClick={() => {

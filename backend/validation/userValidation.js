@@ -260,9 +260,50 @@ const validatePreferences = (req, res, next) => {
   next();
 };
 
+/**
+ * Validate email update data
+ */
+const validateUpdateEmail = (req, res, next) => {
+  const schema = Joi.object({
+    newEmail: Joi.string().email().required().lowercase().trim().messages({
+      "string.empty": "New email is required",
+      "string.email": "Please enter a valid email address",
+      "any.required": "New email is required",
+    }),
+    password: Joi.string().required().messages({
+      "string.empty": "Current password is required",
+      "any.required": "Current password is required",
+    }),
+  }).options({
+    stripUnknown: true,
+    abortEarly: false,
+  });
+
+  const { error, value } = schema.validate(req.body);
+
+  if (error) {
+    const errors = {};
+    error.details.forEach((detail) => {
+      const field = detail.path[0];
+      errors[field] = detail.message;
+    });
+
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors,
+      data: null,
+    });
+  }
+
+  req.validatedData = value;
+  next();
+};
+
 module.exports = {
   validateUpdateProfile,
   validateWatchList,
   validateAddFavorite,
   validatePreferences,
+  validateUpdateEmail,
 };

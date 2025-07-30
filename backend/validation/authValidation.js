@@ -65,13 +65,37 @@ const nameSchema = Joi.string()
     "string.empty": "Name is required",
   });
 
+// Username validation schema
+const usernameSchema = Joi.string()
+  .trim()
+  .min(3)
+  .max(30)
+  .pattern(/^[a-zA-Z0-9_]+$/)
+  .required()
+  .messages({
+    "string.min": "Username must be at least 3 characters long",
+    "string.max": "Username cannot exceed 30 characters",
+    "string.pattern.base": "Username can only contain letters, numbers, and underscores",
+    "string.empty": "Username is required",
+  });
+
+// Country validation schema
+const countrySchema = Joi.string()
+  .required()
+  .messages({
+    "string.empty": "Country is required",
+    "any.required": "Country is required",
+  });
+
 /**
  * Validate registration data
  */
 const validateRegister = (req, res, next) => {
   const schema = Joi.object({
     name: nameSchema,
+    username: usernameSchema,
     email: emailSchema,
+    country: countrySchema,
     password: passwordSchema.required(),
     agreeToTerms: Joi.boolean().valid(true).required().messages({
       "any.only": "You must agree to the terms of service",

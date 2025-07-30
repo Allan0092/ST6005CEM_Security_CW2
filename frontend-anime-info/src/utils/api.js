@@ -129,4 +129,59 @@ export const authAPI = {
   },
 };
 
+// User API functions
+export const userAPI = {
+  updateProfile: async (profileData) => {
+    const token = localStorage.getItem("token");
+    return apiCall("/users/profile", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(profileData),
+    });
+  },
+
+  uploadAvatar: async (formData) => {
+    const token = localStorage.getItem("token");
+    return apiCall("/users/avatar", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Don't set Content-Type for FormData - let browser set it
+      },
+      body: formData,
+    });
+  },
+
+  updateEmail: async (emailData) => {
+    const token = localStorage.getItem("token");
+    const encryptedData = {
+      ...emailData,
+      password: encryptPassword(emailData.password),
+    };
+
+    return apiCall("/users/email", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(encryptedData),
+    });
+  },
+
+  getProfile: async () => {
+    const token = localStorage.getItem("token");
+    return apiCall("/users/profile", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+};
+
 export default apiCall;

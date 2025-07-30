@@ -11,9 +11,12 @@ import {
   FaTimes,
   FaUser,
   FaUserPlus,
+  FaGlobe,
+  FaUserTag,
 } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import countryList from "react-select-country-list";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -21,7 +24,9 @@ const Register = () => {
 
   const [formData, setFormData] = useState({
     name: "",
+    username: "",
     email: "",
+    country: "",
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
@@ -37,6 +42,9 @@ const Register = () => {
   const [animationStep, setAnimationStep] = useState(0);
   const [touchedFields, setTouchedFields] = useState({});
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+
+  // Get country options
+  const countries = countryList().getData();
 
   // Animation sequence
   useEffect(() => {
@@ -73,12 +81,32 @@ const Register = () => {
       }
     }
 
+    // Username validation
+    if (showAllErrors || touchedFields.username) {
+      if (!formData.username.trim()) {
+        errors.username = "Username is required";
+      } else if (formData.username.trim().length < 3) {
+        errors.username = "Username must be at least 3 characters";
+      } else if (formData.username.trim().length > 30) {
+        errors.username = "Username cannot exceed 30 characters";
+      } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+        errors.username = "Username can only contain letters, numbers, and underscores";
+      }
+    }
+
     // Email validation
     if (showAllErrors || touchedFields.email) {
       if (!formData.email) {
         errors.email = "Email is required";
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
         errors.email = "Please enter a valid email address";
+      }
+    }
+
+    // Country validation
+    if (showAllErrors || touchedFields.country) {
+      if (!formData.country) {
+        errors.country = "Country is required";
       }
     }
 
@@ -123,7 +151,12 @@ const Register = () => {
   const checkFormValidity = () => {
     const hasName =
       formData.name.trim().length >= 2 && /^[a-zA-Z\s'-]+$/.test(formData.name);
+    const hasUsername =
+      formData.username.trim().length >= 3 && 
+      formData.username.trim().length <= 30 && 
+      /^[a-zA-Z0-9_]+$/.test(formData.username);
     const hasValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+    const hasCountry = formData.country.trim().length > 0;
     const hasValidPassword =
       formData.password.length >= 8 &&
       /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(formData.password);
@@ -134,7 +167,9 @@ const Register = () => {
 
     return (
       hasName &&
+      hasUsername &&
       hasValidEmail &&
+      hasCountry &&
       hasValidPassword &&
       passwordsMatch &&
       termsAccepted
@@ -194,7 +229,9 @@ const Register = () => {
     // Mark all fields as touched for final validation
     const allTouched = {
       name: true,
+      username: true,
       email: true,
+      country: true,
       password: true,
       confirmPassword: true,
       agreeToTerms: true,
@@ -214,7 +251,9 @@ const Register = () => {
     try {
       const registrationData = {
         name: formData.name.trim(),
+        username: formData.username.trim().toLowerCase(),
         email: formData.email.toLowerCase().trim(),
+        country: formData.country.trim(),
         password: formData.password,
         agreeToTerms: formData.agreeToTerms,
       };
@@ -237,6 +276,8 @@ const Register = () => {
         // Handle registration errors
         if (result.error.includes("email")) {
           setFormErrors({ email: result.error });
+        } else if (result.error.includes("username")) {
+          setFormErrors({ username: result.error });
         } else {
           setFormErrors({ general: result.error });
         }
@@ -419,6 +460,59 @@ const Register = () => {
                 )}
               </div>
 
+              {/* Username Field */}
+              <div className="relative group">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Username
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 w-12 flex items-center justify-center">
+                    <FaUserTag className="text-slate-400" />
+                  </div>
+                  <input
+                    type="text"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField("username")}
+                    onBlur={() => handleBlur("username")}
+                    placeholder="Choose a unique username"
+                    required
+                    className={`w-full pl-12 pr-12 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg ${
+                      shouldShowFieldError("username")
+                        ? "border-red-400/60 focus:ring-red-400/50"
+                        : shouldShowFieldSuccess("username")
+                        ? "border-emerald-400/60 focus:ring-emerald-400/50"
+                        : "border-slate-500/30 focus:ring-slate-400/50"
+                    }`}
+                    style={{
+                      backgroundColor: "rgba(71, 85, 105, 0.25)",
+                      border: shouldShowFieldError("username")
+                        ? "2px solid rgba(248, 113, 113, 0.6)"
+                        : shouldShowFieldSuccess("username")
+                        ? "2px solid rgba(52, 211, 153, 0.6)"
+                        : "2px solid rgba(100, 116, 139, 0.3)",
+                    }}
+                  />
+                  <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center">
+                    {shouldShowFieldSuccess("username") && (
+                      <FaCheck className="text-emerald-400 text-lg" />
+                    )}
+                    {shouldShowFieldError("username") && (
+                      <FaTimes className="text-red-400 text-lg" />
+                    )}
+                  </div>
+                </div>
+                {shouldShowFieldError("username") && (
+                  <p className="mt-2 text-sm text-red-400">{formErrors.username}</p>
+                )}
+                {formData.username && !shouldShowFieldError("username") && (
+                  <p className="mt-1 text-xs text-slate-400">
+                    3-30 characters, letters, numbers, and underscores only
+                  </p>
+                )}
+              </div>
+
               {/* Email Field */}
               <div className="relative group">
                 <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -466,6 +560,65 @@ const Register = () => {
                   <p className="mt-2 text-sm text-red-400">
                     {formErrors.email}
                   </p>
+                )}
+              </div>
+
+              {/* Country Field */}
+              <div className="relative group">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Country
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 w-12 flex items-center justify-center">
+                    <FaGlobe className="text-slate-400" />
+                  </div>
+                  <select
+                    name="country"
+                    value={formData.country}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField("country")}
+                    onBlur={() => handleBlur("country")}
+                    required
+                    className={`w-full pl-12 pr-12 py-4 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 text-lg ${
+                      shouldShowFieldError("country")
+                        ? "border-red-400/60 focus:ring-red-400/50"
+                        : shouldShowFieldSuccess("country")
+                        ? "border-emerald-400/60 focus:ring-emerald-400/50"
+                        : "border-slate-500/30 focus:ring-slate-400/50"
+                    }`}
+                    style={{
+                      backgroundColor: "rgba(71, 85, 105, 0.25)",
+                      border: shouldShowFieldError("country")
+                        ? "2px solid rgba(248, 113, 113, 0.6)"
+                        : shouldShowFieldSuccess("country")
+                        ? "2px solid rgba(52, 211, 153, 0.6)"
+                        : "2px solid rgba(100, 116, 139, 0.3)",
+                    }}
+                  >
+                    <option value="" style={{ backgroundColor: "#475569", color: "#e2e8f0" }}>
+                      Select your country
+                    </option>
+                    {countries.map((country) => (
+                      <option 
+                        key={country.value} 
+                        value={country.label}
+                        style={{ backgroundColor: "#475569", color: "#e2e8f0" }}
+                      >
+                        {country.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center">
+                    {shouldShowFieldSuccess("country") && (
+                      <FaCheck className="text-emerald-400 text-lg" />
+                    )}
+                    {shouldShowFieldError("country") && (
+                      <FaTimes className="text-red-400 text-lg" />
+                    )}
+                  </div>
+                </div>
+                {shouldShowFieldError("country") && (
+                  <p className="mt-2 text-sm text-red-400">{formErrors.country}</p>
                 )}
               </div>
 

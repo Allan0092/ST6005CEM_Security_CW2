@@ -11,10 +11,11 @@ import Favorites from "./components/Favorites";
 import ForgotPassword from "./components/ForgotPassword";
 import Login from "./components/Login";
 import Navbar from "./components/Navbar";
+import OTPVerification from "./components/OTPVerification";
+import Profile from "./components/Profile";
 import Register from "./components/Register";
 import Search from "./components/Search";
 import { AuthProvider } from "./context/AuthContext";
-import OTPVerification from "./components/OTPVerification";
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/search" element={<Search />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/profile" element={<Profile />} />
 
             {/* For 404 pages */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

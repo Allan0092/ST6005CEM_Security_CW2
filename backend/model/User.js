@@ -11,6 +11,17 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: [50, "Name cannot be more than 50 characters"],
     },
+    username: {
+      type: String,
+      required: [true, "Please provide a username"],
+      unique: true,
+      trim: true,
+      lowercase: true,
+      minlength: [3, "Username must be at least 3 characters"],
+      maxlength: [30, "Username cannot be more than 30 characters"],
+      match: [/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"],
+      index: true, 
+    },
     email: {
       type: String,
       required: [true, "Please provide an email"],
@@ -29,7 +40,13 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: "./file_storage/avatar/palceholder.jpg",
+      default: "./file_storage/avatar/placeholder.jpg",
+    },
+    country: {
+      type: String,
+      required: [true, "Please provide a country"],
+      trim: true,
+      maxlength: [100, "Country name cannot be more than 100 characters"],
     },
     role: {
       type: String,
