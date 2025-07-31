@@ -275,13 +275,6 @@ const validateChangePassword = (req, res, next) => {
       "string.empty": "Current password is required",
     }),
     newPassword: passwordSchema.required(),
-    confirmNewPassword: Joi.string()
-      .valid(Joi.ref("newPassword"))
-      .required()
-      .messages({
-        "any.only": "New passwords do not match",
-        "string.empty": "New password confirmation is required",
-      }),
   }).options({
     stripUnknown: true,
     abortEarly: false,
@@ -316,8 +309,6 @@ const validateChangePassword = (req, res, next) => {
     });
   }
 
-  // Remove confirmNewPassword from validated data
-  delete value.confirmNewPassword;
   req.validatedData = value;
   next();
 };

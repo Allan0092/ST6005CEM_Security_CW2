@@ -48,9 +48,30 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const updates = req.validatedData;
+    const userId = req.user.id;
+
+    // Check if username is being updated and if it's already taken
+    if (updates.username) {
+      const existingUser = await User.findOne({ 
+        username: updates.username.toLowerCase(),
+        _id: { $ne: userId } // Exclude current user
+      });
+      
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Username already taken",
+          errors: { username: "This username is already in use" },
+          data: null,
+        });
+      }
+      
+      // Convert username to lowercase for consistency
+      updates.username = updates.username.toLowerCase();
+    }
 
     const user = await User.findByIdAndUpdate(
-      req.user.id,
+      userId,
       { ...updates },
       {
         new: true,
@@ -85,6 +106,19 @@ const updateProfile = async (req, res) => {
         success: false,
         message: "Validation failed",
         errors,
+        data: null,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      const message = field === 'username' ? 'Username already taken' : 'Field already exists';
+      
+      return res.status(400).json({
+        success: false,
+        message: "Update failed",
+        errors: { [field]: message },
         data: null,
       });
     }

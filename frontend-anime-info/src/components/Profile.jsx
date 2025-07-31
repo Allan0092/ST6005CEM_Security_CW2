@@ -183,7 +183,7 @@ const Profile = () => {
       newErrors.newPassword = "Password must be at least 8 characters";
     } else if (!isStrongPassword(passwordData.newPassword)) {
       newErrors.newPassword =
-        "Password must contain uppercase, lowercase, number, and special character";
+        "Password must be at least 8 characters with uppercase, lowercase, number, and special character";
     }
 
     if (!passwordData.confirmNewPassword) {
@@ -254,15 +254,32 @@ const Profile = () => {
     setErrors({});
 
     try {
-      const response = await userAPI.updateEmail(emailData);
+      console.log("Updating email:", emailData);
+
+      // Use userAPI.updateEmail which should exist
+      const response = await userAPI.updateEmail({
+        newEmail: emailData.newEmail,
+        password: emailData.password,
+      });
 
       if (response.success) {
-        setSuccessMessage("Verification email sent to your new email address!");
-        setEmailData({ newEmail: "", password: "" });
+        setSuccessMessage(
+          "Email update request sent! Please check your email for verification."
+        );
+        setEmailData((prev) => ({ ...prev, password: "" }));
+
         setTimeout(() => setSuccessMessage(""), 5000);
+      } else {
+        setErrors({ email: response.message || "Failed to update email" });
       }
     } catch (error) {
-      setErrors({ email: error.message || "Failed to update email" });
+      console.error("Failed to update email:", error);
+
+      if (error.message.includes("password")) {
+        setErrors({ password: "Current password is incorrect" });
+      } else {
+        setErrors({ email: "Failed to update email. Please try again." });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -284,7 +301,6 @@ const Profile = () => {
       const response = await authAPI.changePassword({
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
-        confirmNewPassword: passwordData.confirmNewPassword,
       });
 
       if (response.success) {
@@ -295,9 +311,28 @@ const Profile = () => {
           confirmNewPassword: "",
         });
         setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        setErrors({
+          password: response.message || "Failed to update password",
+        });
       }
     } catch (error) {
-      setErrors({ password: error.message || "Failed to change password" });
+      console.error("Failed to update password:", error);
+
+      if (error.message.includes("Current password")) {
+        setErrors({ currentPassword: "Current password is incorrect" });
+      } else if (error.message.includes("New password")) {
+        setErrors({
+            newPassword: error.message,
+        });
+
+      } else if (error.message.includes("same")) {
+        setErrors({
+          newPassword: "New password must be different from current password",
+        });
+      } else {
+        setErrors({ password: error.message || "Failed to update password. Please try again." });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -557,7 +592,7 @@ const Profile = () => {
                     value={generalData.country}
                     onChange={handleCountryChange}
                     error={errors.country}
-                    placeholder="Select your country"
+                    placeholder={"Select your country"}
                   />
                   {errors.country && (
                     <p className="mt-1 text-red-400 text-sm flex items-center">

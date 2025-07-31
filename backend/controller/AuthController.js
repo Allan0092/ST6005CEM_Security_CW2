@@ -50,6 +50,8 @@ const sendTokenResponse = (user, statusCode, res, message = "Success") => {
         user: {
           id: user._id,
           name: user.name,
+          username: user.username,
+          country: user.country,
           email: user.email,
           role: user.role,
           avatar: user.avatar,
@@ -66,8 +68,15 @@ const sendTokenResponse = (user, statusCode, res, message = "Success") => {
  */
 const register = async (req, res) => {
   try {
-    const { name, username, email, country, password, agreeToTerms, marketingEmails } =
-      req.validatedData;
+    const {
+      name,
+      username,
+      email,
+      country,
+      password,
+      agreeToTerms,
+      marketingEmails,
+    } = req.validatedData;
 
     // Check if user already exists by email
     const existingUserByEmail = await User.findOne({ email });
@@ -81,7 +90,9 @@ const register = async (req, res) => {
     }
 
     // Check if username already exists
-    const existingUserByUsername = await User.findOne({ username: username.toLowerCase() });
+    const existingUserByUsername = await User.findOne({
+      username: username.toLowerCase(),
+    });
     if (existingUserByUsername) {
       return res.status(400).json({
         success: false,
@@ -172,8 +183,9 @@ const register = async (req, res) => {
     // Handle duplicate key errors
     if (error.code === 11000) {
       const field = Object.keys(error.keyValue)[0];
-      const message = field === 'email' ? 'Email already exists' : 'Username already taken';
-      
+      const message =
+        field === "email" ? "Email already exists" : "Username already taken";
+
       return res.status(400).json({
         success: false,
         message: "Registration failed",
@@ -481,6 +493,8 @@ const getMe = async (req, res) => {
           id: user._id,
           name: user.name,
           email: user.email,
+          username: user.username,
+          country: user.country,
           role: user.role,
           avatar: user.avatar,
           isEmailVerified: user.isEmailVerified,
@@ -812,25 +826,93 @@ const refreshToken = async (req, res) => {
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.validatedData;
+    const userId = req.user.id;
 
-    const user = await User.findById(req.user.id).select("+password");
+    // Get user with password AND previousPassword
+    const user = await User.findById(userId).select(
+      "+password +previousPassword"
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+        errors: { user: "User not found" },
+        data: null,
+      });
+    }
 
     // Check current password
-    if (!(await user.comparePassword(currentPassword))) {
-      return res.status(401).json({
+    const isPasswordMatch = await user.comparePassword(currentPassword);
+    if (!isPasswordMatch) {
+      return res.status(400).json({
         success: false,
-        message: "Invalid current password",
+        message: "Current password is incorrect",
         errors: { currentPassword: "Current password is incorrect" },
         data: null,
       });
     }
 
+    // Ensure new password is different from current password
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be different from current password",
+        errors: {
+          newPassword: "New password must be different from current password",
+        },
+        data: null,
+      });
+    }
+
+    // Check if new password matches the previous password
+    if (user.previousPassword) {
+      // Compare with hashed previous password
+      const isPreviousPassword = await user.comparePassword(newPassword);
+
+      // Also check if the plain text matches (in case previousPassword is stored as plain text)
+      const isPlainTextMatch = newPassword === user.previousPassword;
+
+      if (isPreviousPassword || isPlainTextMatch) {
+        return res.status(400).json({
+          success: false,
+          message: "New password must be different from previous passwords",
+          errors: {
+            newPassword:
+              "New password must be different from previous passwords",
+          },
+          data: null,
+        });
+      }
+    }
+
+    // Update password
+    user.previousPassword = currentPassword;
     user.password = newPassword;
     await user.save();
 
-    sendTokenResponse(user, 200, res, "Password changed successfully");
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+      data: null,
+    });
   } catch (error) {
     console.error("Change password error:", error);
+
+    if (error.name === "ValidationError") {
+      const errors = {};
+      Object.keys(error.errors).forEach((key) => {
+        errors[key] = error.errors[key].message;
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors,
+        data: null,
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Password change failed",

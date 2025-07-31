@@ -127,6 +127,26 @@ export const authAPI = {
       body: JSON.stringify(data),
     });
   },
+
+  changePassword: async (passwordData) => {
+    const token = localStorage.getItem("token");
+
+    // Only encrypt and send currentPassword and newPassword
+    const encryptedData = {
+      currentPassword: encryptPassword(passwordData.currentPassword),
+      newPassword: encryptPassword(passwordData.newPassword),
+      // Remove confirmNewPassword - handle confirmation on frontend only
+    };
+
+    return apiCall("/auth/change-password", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(encryptedData),
+    });
+  },
 };
 
 // User API functions

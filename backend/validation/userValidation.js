@@ -14,6 +14,25 @@ const nameSchema = Joi.string()
     "string.empty": "Name is required",
   });
 
+// Username validation schema
+const usernameSchema = Joi.string()
+  .trim()
+  .min(3)
+  .max(30)
+  .pattern(/^[a-zA-Z0-9_]+$/)
+  .messages({
+    "string.min": "Username must be at least 3 characters long",
+    "string.max": "Username cannot exceed 30 characters",
+    "string.pattern.base":
+      "Username can only contain letters, numbers, and underscores",
+  });
+
+// Country validation schema
+const countrySchema = Joi.string().trim().min(2).max(100).messages({
+  "string.min": "Country name must be at least 2 characters",
+  "string.max": "Country name cannot exceed 100 characters",
+});
+
 // Bio validation schema
 const bioSchema = Joi.string().trim().max(500).allow("").messages({
   "string.max": "Bio cannot exceed 500 characters",
@@ -25,6 +44,8 @@ const bioSchema = Joi.string().trim().max(500).allow("").messages({
 const validateUpdateProfile = (req, res, next) => {
   const schema = Joi.object({
     name: nameSchema.optional(),
+    username: usernameSchema.optional(),
+    country: countrySchema.optional(),
     bio: bioSchema.optional(),
     dateOfBirth: Joi.date().max("now").optional().messages({
       "date.max": "Date of birth cannot be in the future",
