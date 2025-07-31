@@ -6,7 +6,6 @@ import {
   FaEnvelope,
   FaEye,
   FaEyeSlash,
-  FaGlobe,
   FaLock,
   FaSave,
   FaTimes,
@@ -336,7 +335,7 @@ const Profile = () => {
   const getAvatarUrl = (avatar) => {
     if (avatarPreview) return avatarPreview;
     if (!avatar) return "/images/avatar-placeholder.jpg";
-    if (avatar.startsWith("http")) return avatar;
+    if (avatar.startsWith("https")) return avatar;
     if (avatar.includes("/uploads/")) return `https://localhost:3000${avatar}`;
     return "/images/avatar-placeholder.jpg";
   };
@@ -686,7 +685,9 @@ const Profile = () => {
                 {/* Preview and Upload Button */}
                 {avatarFile && (
                   <div className="text-center space-y-4">
-                    <p className="text-slate-300">Selected: {avatarFile.name}</p>
+                    <p className="text-slate-300">
+                      Selected: {avatarFile.name}
+                    </p>
                     <button
                       onClick={handleAvatarSubmit}
                       disabled={isLoading}

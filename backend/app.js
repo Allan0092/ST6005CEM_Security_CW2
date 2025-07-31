@@ -60,6 +60,31 @@ app.use(cookieParser());
 app.use(compression());
 
 // Static files
+app.use(
+  "/api/v1/uploads",
+  express.static(path.join(__dirname, "file_storage"), {
+    maxAge: "1d", // Cache files for 1 day
+    etag: false,
+    setHeaders: (res, filePath) => {
+      // Set CORS headers for images
+      res.set(
+        "Access-Control-Allow-Origin",
+        process.env.CLIENT_URL || "https://localhost:5173"
+      );
+      res.set("Access-Control-Allow-Methods", "GET");
+      res.set("Access-Control-Allow-Headers", "Content-Type");
+
+      // Set content type for images
+      if (filePath.endsWith(".png")) res.set("Content-Type", "image/png");
+      if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg"))
+        res.set("Content-Type", "image/jpeg");
+      if (filePath.endsWith(".gif")) res.set("Content-Type", "image/gif");
+      if (filePath.endsWith(".webp")) res.set("Content-Type", "image/webp");
+    },
+  })
+);
+
+// for backwards compatibility
 app.use("/uploads", express.static(path.join(__dirname, "file_storage")));
 
 // Security headers for HTTPS

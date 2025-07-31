@@ -132,8 +132,8 @@ const deleteFile = (filePath) => {
 const getFileUrl = (filename, type = "avatar") => {
   if (!filename) return null;
 
-  const baseUrl = process.env.BASE_URL || "http://localhost:5000";
-  return `${baseUrl}/uploads/${type}/${filename}`;
+  const baseUrl = process.env.BASE_URL || "https://localhost:3000";
+  return `${baseUrl}/api/v1/uploads/${type}/${filename}`;
 };
 
 module.exports = {

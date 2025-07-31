@@ -81,9 +81,14 @@ const usernameSchema = Joi.string()
 
 // Country validation schema
 const countrySchema = Joi.string()
+  .trim()
+  .min(2)
+  .max(100)
   .required()
   .messages({
     "string.empty": "Country is required",
+    "string.min": "Country name must be at least 2 characters",
+    "string.max": "Country name cannot exceed 100 characters",
     "any.required": "Country is required",
   });
 

@@ -66,16 +66,27 @@ const sendTokenResponse = (user, statusCode, res, message = "Success") => {
  */
 const register = async (req, res) => {
   try {
-    const { name, email, password, agreeToTerms, marketingEmails } =
+    const { name, username, email, country, password, agreeToTerms, marketingEmails } =
       req.validatedData;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    // Check if user already exists by email
+    const existingUserByEmail = await User.findOne({ email });
+    if (existingUserByEmail) {
       return res.status(400).json({
         success: false,
         message: "Registration failed",
         errors: { email: "User with this email already exists" },
+        data: null,
+      });
+    }
+
+    // Check if username already exists
+    const existingUserByUsername = await User.findOne({ username: username.toLowerCase() });
+    if (existingUserByUsername) {
+      return res.status(400).json({
+        success: false,
+        message: "Registration failed",
+        errors: { username: "Username is already taken" },
         data: null,
       });
     }
@@ -89,8 +100,10 @@ const register = async (req, res) => {
 
     // Create user
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      username: username.toLowerCase().trim(),
+      email: email.toLowerCase().trim(),
+      country: country.trim(),
       password,
       emailVerificationToken: hashedVerificationToken,
       preferences: {
@@ -132,7 +145,9 @@ const register = async (req, res) => {
         user: {
           id: user._id,
           name: user.name,
+          username: user.username,
           email: user.email,
+          country: user.country,
           isEmailVerified: user.isEmailVerified,
         },
       },
@@ -150,6 +165,19 @@ const register = async (req, res) => {
         success: false,
         message: "Registration failed - Validation error",
         errors,
+        data: null,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      const message = field === 'email' ? 'Email already exists' : 'Username already taken';
+      
+      return res.status(400).json({
+        success: false,
+        message: "Registration failed",
+        errors: { [field]: message },
         data: null,
       });
     }

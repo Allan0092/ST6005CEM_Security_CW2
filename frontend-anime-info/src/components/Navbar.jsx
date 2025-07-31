@@ -53,13 +53,19 @@ const Navbar = () => {
   const getAvatarUrl = (avatar) => {
     if (!avatar) return "/images/avatar-placeholder.jpg";
 
-    if (avatar.startsWith("http")) return avatar;
-
-    if (avatar.includes("/uploads/")) {
-      return `http://localhost:3000${avatar}`;
+    // If it's already a full URL, return as is
+    if (avatar.startsWith("http")) {
+      return avatar;
     }
 
-    return "/images/avatar-placeholder.jpg";
+    // If it's a relative path starting with ./file_storage, convert it
+    if (avatar.startsWith("./file_storage/")) {
+      const relativePath = avatar.replace("./file_storage/", "");
+      return `https://localhost:3000/api/v1/uploads/${relativePath}`;
+    }
+
+    // If it's just a filename, assume it's in the avatar folder
+    return `https://localhost:3000/api/v1/uploads/avatar/${avatar}`;
   };
 
   return (

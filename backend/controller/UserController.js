@@ -173,9 +173,17 @@ const uploadAvatar = async (req, res) => {
       user.avatar &&
       user.avatar !== "placeholder.jpg" &&
       user.avatar !== "placeholder1.jpg" &&
-      user.avatar !== "placeholder.png"
+      user.avatar !== "placeholder.png" &&
+      !user.avatar.includes("placeholder")
     ) {
-      const oldFilename = path.basename(user.avatar);
+      // Extract filename from URL if it's a full URL
+      let oldFilename;
+      if (user.avatar.startsWith('http')) {
+        oldFilename = path.basename(user.avatar);
+      } else {
+        oldFilename = path.basename(user.avatar);
+      }
+      
       const oldFilePath = path.join(
         __dirname,
         "../file_storage/avatar",
@@ -186,6 +194,8 @@ const uploadAvatar = async (req, res) => {
 
     // Update user with new avatar URL
     const avatarUrl = getFileUrl(req.file.filename, "avatar");
+    
+    // Store the full URL in the database
     user.avatar = avatarUrl;
     await user.save();
 
