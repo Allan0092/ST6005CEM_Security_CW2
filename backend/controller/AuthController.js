@@ -517,7 +517,7 @@ const getMe = async (req, res) => {
 };
 
 /**
- * @desc    Forgot password
+ * @desc    Forgot password, sends the email only.
  * @route   POST /api/v1/auth/forgot-password
  * @access  Public
  */
@@ -593,13 +593,23 @@ const forgotPassword = async (req, res) => {
 };
 
 /**
- * @desc    Reset password
+ * @desc    Forgot password part 2, Reset password from the email link
  * @route   PUT /api/v1/auth/reset-password/:resettoken
  * @access  Public
  */
 const resetPassword = async (req, res) => {
   try {
-    const { password } = req.validatedData;
+    const { password, confirmPassword } = req.validatedData;
+
+    // Additional backend validation: ensure passwords match (defense in depth)
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+        errors: { confirmPassword: "Passwords do not match" },
+        data: null,
+      });
+    }
 
     // Get hashed token
     const resetPasswordToken = crypto
@@ -607,10 +617,11 @@ const resetPassword = async (req, res) => {
       .update(req.params.resetToken)
       .digest("hex");
 
+    // Find user with password AND previousPassword fields
     const user = await User.findOne({
       resetPasswordToken,
       resetPasswordExpire: { $gt: Date.now() },
-    });
+    }).select("+password +previousPassword");
 
     if (!user) {
       return res.status(400).json({
@@ -621,10 +632,60 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    // Set new password
+    // Check if new password matches current password
+    const isCurrentPassword = await user.comparePassword(password);
+    if (isCurrentPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be different from current password",
+        errors: {
+          password: "New password must be different from current password",
+        },
+        data: null,
+      });
+    }
+
+    // Check if new password matches the previous password
+    if (user.previousPassword) {
+      const bcrypt = require("bcryptjs");
+      let isPreviousPassword = false;
+
+      try {
+        // Check if previousPassword is hashed (starts with $2b$ or similar bcrypt pattern)
+        if (user.previousPassword.startsWith('$2')) {
+          isPreviousPassword = await bcrypt.compare(password, user.previousPassword);
+        } else {
+          // If previousPassword is stored as plain text (legacy)
+          isPreviousPassword = password === user.previousPassword;
+        }
+      } catch (error) {
+        console.log("Error comparing with previous password:", error);
+        // If comparison fails, treat as plain text comparison
+        isPreviousPassword = password === user.previousPassword;
+      }
+
+      if (isPreviousPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "New password must be different from previous passwords",
+          errors: {
+            password: "New password must be different from previous passwords",
+          },
+          data: null,
+        });
+      }
+    }
+
+    // Store current password as previous before updating
+    user.previousPassword = user.password; // Store the current hashed password
+
+    // Set new password (will be hashed by pre-save middleware)
     user.password = password;
+
+    // Clear reset token fields
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
+
     await user.save();
 
     sendTokenResponse(user, 200, res, "Password reset successful");

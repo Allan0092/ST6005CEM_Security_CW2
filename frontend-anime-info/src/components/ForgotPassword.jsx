@@ -1,22 +1,109 @@
 import { useState } from "react";
-import { FaArrowLeft, FaEnvelope } from "react-icons/fa";
+import { FaArrowLeft, FaEnvelope, FaTimes } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { authAPI } from "../utils/api";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrors({});
+    setSuccessMessage("");
 
-    // Simulate API call
-    setTimeout(() => {
+    // Client-side validation
+    if (!email) {
+      setErrors({ email: "Email address is required" });
       setIsLoading(false);
-      setIsEmailSent(true);
-      console.log("Password reset email sent to:", email);
-    }, 2000);
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setErrors({ email: "Please enter a valid email address" });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log("Sending password reset email to:", email);
+
+      const response = await authAPI.forgotPassword({ email });
+
+      if (response.success) {
+        setIsEmailSent(true);
+        setSuccessMessage(
+          response.message || "Password reset link sent successfully!"
+        );
+        console.log("Password reset email sent successfully");
+      } else {
+        // Handle backend validation errors
+        if (response.errors) {
+          setErrors(response.errors);
+        } else {
+          setErrors({
+            email: response.message || "Failed to send reset email",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to send password reset email:", error);
+
+      // Parse error response properly
+      if (error.response && error.response.data) {
+        const errorData = error.response.data;
+
+        if (errorData.errors) {
+          setErrors(errorData.errors);
+        } else if (errorData.message) {
+          // Map specific error messages to appropriate fields
+          const errorMessage = errorData.message;
+
+          if (
+            errorMessage.includes("not found") ||
+            errorMessage.includes("does not exist")
+          ) {
+            setErrors({ email: "No account found with this email address" });
+          } else if (
+            errorMessage.includes("invalid") ||
+            errorMessage.includes("format")
+          ) {
+            setErrors({ email: "Please enter a valid email address" });
+          } else if (
+            errorMessage.includes("rate limit") ||
+            errorMessage.includes("too many")
+          ) {
+            setErrors({ email: "Too many requests. Please try again later" });
+          } else {
+            setErrors({ email: errorMessage });
+          }
+        } else {
+          setErrors({ email: "Failed to send reset email. Please try again." });
+        }
+      } else {
+        setErrors({
+          email: "Network error. Please check your connection and try again.",
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTryAgain = () => {
+    setIsEmailSent(false);
+    setErrors({});
+    setSuccessMessage("");
+    setEmail("");
   };
 
   if (isEmailSent) {
@@ -97,9 +184,17 @@ const ForgotPassword = () => {
               <p className="text-slate-400 text-sm mb-8">
                 Didn't receive the email? Check your spam folder or try again.
               </p>
+
+              {/* Success Message */}
+              {successMessage && (
+                <div className="mb-6 p-4 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
+                  <p className="text-emerald-400 text-sm">{successMessage}</p>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <button
-                  onClick={() => setIsEmailSent(false)}
+                  onClick={handleTryAgain}
                   className="w-full py-3 px-4 font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
                   style={{
                     background:
@@ -212,6 +307,16 @@ const ForgotPassword = () => {
               </p>
             </div>
 
+            {/* Global Error Display */}
+            {errors.general && (
+              <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+                <div className="flex items-center">
+                  <FaTimes className="text-red-400 mr-2" />
+                  <p className="text-red-400 text-sm">{errors.general}</p>
+                </div>
+              </div>
+            )}
+
             {/* Forgot Password Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
@@ -222,16 +327,32 @@ const ForgotPassword = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    // Clear email error when user starts typing
+                    if (errors.email) {
+                      setErrors((prev) => ({ ...prev, email: null }));
+                    }
+                  }}
                   placeholder="Enter your email address"
-                  required
-                  className="w-full pl-10 pr-4 py-3 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300"
+                  className={`w-full pl-10 pr-4 py-3 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 ${
+                    errors.email
+                      ? "border-red-400/60 focus:ring-red-400/50"
+                      : "border-slate-500/30 focus:ring-slate-400/50"
+                  }`}
                   style={{
                     backgroundColor: "rgba(71, 85, 105, 0.2)",
-                    border: "1px solid rgba(100, 116, 139, 0.3)",
-                    focusRingColor: "rgba(148, 163, 184, 0.5)",
+                    border: errors.email
+                      ? "2px solid rgba(248, 113, 113, 0.6)"
+                      : "2px solid rgba(100, 116, 139, 0.3)",
                   }}
                 />
+                {errors.email && (
+                  <p className="mt-2 text-red-400 text-sm flex items-center">
+                    <FaTimes className="mr-1" />
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               {/* Submit Button */}

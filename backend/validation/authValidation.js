@@ -260,8 +260,6 @@ const validateResetPassword = (req, res, next) => {
     });
   }
 
-  // Remove confirmPassword from validated data
-  delete value.confirmPassword;
   req.validatedData = value;
   next();
 };
@@ -275,6 +273,12 @@ const validateChangePassword = (req, res, next) => {
       "string.empty": "Current password is required",
     }),
     newPassword: passwordSchema.required(),
+    confirmNewPassword: Joi.string()
+      .valid(Joi.ref("newPassword"))
+      .optional()
+      .messages({
+        "any.only": "Passwords do not match",
+      }),
   }).options({
     stripUnknown: true,
     abortEarly: false,
@@ -301,10 +305,8 @@ const validateChangePassword = (req, res, next) => {
   if (value.currentPassword === value.newPassword) {
     return res.status(400).json({
       success: false,
-      message: "Validation failed",
-      errors: {
-        newPassword: "New password must be different from current password",
-      },
+      message: "New password must be different from current password",
+      errors: { newPassword: "New password must be different from current password" },
       data: null,
     });
   }

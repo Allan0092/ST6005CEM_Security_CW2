@@ -14,6 +14,7 @@ import Navbar from "./components/Navbar";
 import OTPVerification from "./components/OTPVerification";
 import Profile from "./components/Profile";
 import Register from "./components/Register";
+import ResetPassword from "./components/ResetPassword";
 import Search from "./components/Search";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -26,23 +27,24 @@ function App() {
 
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
             {/* Authentication routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-otp" element={<OTPVerification />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route
+              path="/reset-password/:resetToken"
+              element={<ResetPassword />}
+            />{" "}
+            <Route
               path="/verify-email/:token"
               element={<EmailVerification />}
             />
-
             {/* Protected routes */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/search" element={<Search />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/profile" element={<Profile />} />
-
             {/* For 404 pages */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

@@ -44,7 +44,6 @@ const decryptPassword = (req, res, next) => {
 
     // Decrypt password 
     if (req.body.password) {
-      // Decrypt the password
       const bytes = CryptoJS.AES.decrypt(req.body.password, ENCRYPTION_KEY);
       const decryptedPassword = bytes.toString(CryptoJS.enc.Utf8);
 
@@ -58,6 +57,23 @@ const decryptPassword = (req, res, next) => {
       }
 
       req.body.password = decryptedPassword;
+    }
+
+    // Decrypt confirmPassword if present
+    if (req.body.confirmPassword) {
+      const bytes = CryptoJS.AES.decrypt(req.body.confirmPassword, ENCRYPTION_KEY);
+      const decryptedPassword = bytes.toString(CryptoJS.enc.Utf8);
+
+      if (!decryptedPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid confirm password encryption",
+          errors: { confirmPassword: "Confirm password decryption failed" },
+          data: null,
+        });
+      }
+
+      req.body.confirmPassword = decryptedPassword;
     }
 
     next();

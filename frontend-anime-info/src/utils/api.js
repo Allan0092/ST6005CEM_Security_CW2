@@ -28,17 +28,35 @@ const apiCall = async (endpoint, options = {}) => {
     console.log(`Making API call to: ${url}`);
     const response = await fetch(url, config);
     const data = await response.json();
-
     console.log(`API Response (${response.status}):`, data);
 
     if (!response.ok) {
-      throw new Error(data.message || "API request failed");
+      // Create an error that preserves the response structure
+      const error = new Error(data.message || `HTTP error! status: ${response.status}`);
+      error.response = {
+        status: response.status,
+        statusText: response.statusText,
+        data: data, // This preserves the errors object and message
+      };
+      throw error;
     }
 
     return data;
   } catch (error) {
-    console.error("API Error:", error);
-    throw error;
+    if (error.response) {
+      throw error;
+    }
+
+    console.error(`API call failed for ${endpoint}:`, error);
+    const networkError = new Error("Network error occurred");
+    networkError.response = {
+      status: 0,
+      data: {
+        message: "Failed to connect to server",
+        errors: { network: "Connection failed" },
+      },
+    };
+    throw networkError;
   }
 };
 
@@ -90,10 +108,13 @@ export const authAPI = {
     });
   },
 
-  forgotPassword: async (email) => {
+  forgotPassword: async (data) => {
     return apiCall("/auth/forgot-password", {
       method: "POST",
-      body: JSON.stringify({ email }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
     });
   },
 
@@ -131,17 +152,31 @@ export const authAPI = {
   changePassword: async (passwordData) => {
     const token = localStorage.getItem("token");
 
-    // Only encrypt and send currentPassword and newPassword
+    // Encrypt and send currentPassword and newPassword
     const encryptedData = {
       currentPassword: encryptPassword(passwordData.currentPassword),
       newPassword: encryptPassword(passwordData.newPassword),
-      // Remove confirmNewPassword - handle confirmation on frontend only
     };
 
     return apiCall("/auth/change-password", {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(encryptedData),
+    });
+  },
+
+  resetPassword: async (resetToken, data) => {
+    const encryptedData = {
+      password: encryptPassword(data.password),
+      confirmPassword: encryptPassword(data.confirmPassword),
+    };
+
+    return apiCall(`/auth/reset-password/${resetToken}`, {
+      method: "PUT",
+      headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(encryptedData),
@@ -169,7 +204,6 @@ export const userAPI = {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        // Don't set Content-Type for FormData - let browser set it
       },
       body: formData,
     });
