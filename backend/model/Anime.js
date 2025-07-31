@@ -173,10 +173,12 @@ const animeSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    favorites: {
-      type: Number,
-      default: 0,
-    },
+    favorites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     viewCount: {
       type: Number,
       default: 0,
@@ -216,6 +218,11 @@ animeSchema.virtual("totalDuration").get(function () {
     return this.episodes.total * this.episodes.duration;
   }
   return null;
+});
+
+// Virtual for favorites count
+animeSchema.virtual("favoritesCount").get(function () {
+  return this.favorites ? this.favorites.length : 0;
 });
 
 // Index for search functionality

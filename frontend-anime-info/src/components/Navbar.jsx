@@ -8,6 +8,7 @@ import {
   FaSignOutAlt,
   FaTimes,
   FaUserPlus,
+  FaShieldAlt,
 } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -140,6 +141,21 @@ const Navbar = () => {
                   </div>
                 </Link>
 
+                {/* Admin Link - Only visible to admin users */}
+                {user?.role === "admin" && (
+                  <Link
+                    to="/admin"
+                    className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      isActiveRoute("/admin")
+                        ? "bg-slate-600 text-white"
+                        : "text-slate-300 hover:text-white hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <FaShieldAlt className="mr-2" />
+                    Admin
+                  </Link>
+                )}
+
                 {/* Logout Button */}
                 <button
                   onClick={handleLogout}
@@ -262,6 +278,23 @@ const Navbar = () => {
                         </p>
                       </div>
                     </Link>
+
+                    {/* Admin Link - Only visible in mobile menu to admin users */}
+                    {user?.role === "admin" && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          isActiveRoute("/admin")
+                            ? "bg-slate-600 text-white"
+                            : "text-slate-300 hover:text-white hover:bg-slate-700/50"
+                        }`}
+                      >
+                        <FaShieldAlt className="mr-2" />
+                        Admin
+                      </Link>
+                    )}
+
                     {/* Logout Button */}
                     <button
                       onClick={() => {

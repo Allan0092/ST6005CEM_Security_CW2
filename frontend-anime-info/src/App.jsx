@@ -16,6 +16,7 @@ import Profile from "./components/Profile";
 import Register from "./components/Register";
 import ResetPassword from "./components/ResetPassword";
 import Search from "./components/Search";
+import AdminDashboard from "./components/admin/AdminDashboard"; // Add this import
 import { AuthProvider } from "./context/AuthContext";
 
 function App() {
@@ -45,6 +46,8 @@ function App() {
             <Route path="/search" element={<Search />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/profile" element={<Profile />} />
+            {/* Admin routes */}
+            <Route path="/admin" element={<AdminDashboard />} />
             {/* For 404 pages */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

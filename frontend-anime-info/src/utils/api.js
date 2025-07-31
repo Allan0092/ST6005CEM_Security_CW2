@@ -238,4 +238,185 @@ export const userAPI = {
   },
 };
 
+// Admin API functions
+export const adminAPI = {
+  // Dashboard & Stats
+  getStats: async () => {
+    const token = localStorage.getItem("token");
+    return apiCall("/admin/stats", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  getAnalytics: async () => {
+    const token = localStorage.getItem("token");
+    return apiCall("/admin/analytics", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  // User Management
+  getAllUsers: async (params = {}) => {
+    const token = localStorage.getItem("token");
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/admin/users?${queryString}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  getUserDetails: async (userId) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/admin/users/${userId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  updateUserStatus: async (userId, statusData) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/admin/users/${userId}/status`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(statusData),
+    });
+  },
+
+  deleteUser: async (userId) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/admin/users/${userId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  // Anime Management
+  getAdminAnime: async (params = {}) => {
+    const token = localStorage.getItem("token");
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/admin/anime?${queryString}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  getAnimeDetails: async (animeId) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/admin/anime/${animeId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  createAnime: async (animeData) => {
+    const token = localStorage.getItem("token");
+    return apiCall("/admin/anime", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Don't set Content-Type for FormData
+      },
+      body: animeData, // FormData object
+    });
+  },
+
+  updateAnime: async (animeId, animeData) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/admin/anime/${animeId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Don't set Content-Type for FormData
+      },
+      body: animeData, // FormData object
+    });
+  },
+
+  deleteAnime: async (animeId) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/admin/anime/${animeId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  // Reports Management
+  getReports: async (params = {}) => {
+    const token = localStorage.getItem("token");
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/admin/reports?${queryString}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  handleReport: async (reportId, action) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/admin/reports/${reportId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(action),
+    });
+  },
+
+  // System Management
+  backupDatabase: async () => {
+    const token = localStorage.getItem("token");
+    return apiCall("/admin/backup", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  getSystemLogs: async (params = {}) => {
+    const token = localStorage.getItem("token");
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/admin/logs?${queryString}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+};
+
 export default apiCall;
