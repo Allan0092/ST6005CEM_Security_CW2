@@ -8,11 +8,13 @@ import {
   FaFilm,
   FaShieldAlt,
   FaUsers,
+  FaServer,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import { adminAPI } from "../../utils/api";
 import UserManagement from "./users/UserManagement";
 import AnimeManagement from "./anime/AnimeManagement";
+import LogManagement from "./logs/LogManagement";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -47,6 +49,7 @@ const AdminDashboard = () => {
     { id: "users", label: "Users", icon: FaUsers },
     { id: "anime", label: "Anime", icon: FaFilm },
     { id: "reviews", label: "Reviews", icon: FaComments },
+    { id: "logs", label: "System Logs", icon: FaServer },
     { id: "reports", label: "Reports", icon: FaExclamationTriangle },
     { id: "system", label: "System", icon: FaCog },
   ];
@@ -166,33 +169,36 @@ const AdminDashboard = () => {
       case "reviews":
         return (
           <div className="text-center py-12">
-            <FaComments className="text-6xl text-slate-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-4">
-              Review Management
+            <FaComments className="text-4xl text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">
+              Reviews Management
             </h3>
-            <p className="text-slate-400">Coming soon...</p>
+            <p className="text-slate-400">Review management coming soon.</p>
           </div>
         );
 
+      case "logs":
+        return <LogManagement />;
+      
       case "reports":
         return (
           <div className="text-center py-12">
-            <FaExclamationTriangle className="text-6xl text-slate-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-4">
-              Reports & Moderation
+            <FaExclamationTriangle className="text-4xl text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">
+              Reports Management
             </h3>
-            <p className="text-slate-400">Coming soon...</p>
+            <p className="text-slate-400">Reports management coming soon.</p>
           </div>
         );
 
       case "system":
         return (
           <div className="text-center py-12">
-            <FaCog className="text-6xl text-slate-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-4">
-              System Management
+            <FaCog className="text-4xl text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">
+              System Settings
             </h3>
-            <p className="text-slate-400">Coming soon...</p>
+            <p className="text-slate-400">System settings coming soon.</p>
           </div>
         );
 

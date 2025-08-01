@@ -20,6 +20,7 @@ const options = {
 // Middleware
 const errorHandler = require("./middleware/errorHandler");
 const notFound = require("./middleware/notFound");
+const requestLogger = require("./middleware/requestLogger"); 
 
 const routes = require("./routes");
 
@@ -58,6 +59,9 @@ app.use(cookieParser());
 
 // Compression middleware
 app.use(compression());
+
+// REQUEST LOGGING MIDDLEWARE 
+app.use(requestLogger);
 
 // Static files
 app.use(

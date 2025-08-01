@@ -417,6 +417,58 @@ export const adminAPI = {
       },
     });
   },
+
+  // Log Management Functions
+  getLogs: async (params = {}) => {
+    const token = localStorage.getItem("token");
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/admin/logs${queryString ? `?${queryString}` : ""}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  getLogStats: async (params = {}) => {
+    const token = localStorage.getItem("token");
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/admin/logs/stats${queryString ? `?${queryString}` : ""}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  cleanupLogs: async (data) => {
+    const token = localStorage.getItem("token");
+    return apiCall("/admin/logs/cleanup", {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+  },
+
+  exportLogs: async (params = {}) => {
+    const token = localStorage.getItem("token");
+    const queryString = new URLSearchParams(params).toString();
+
+    // Create a temporary link for file download
+    const link = document.createElement("a");
+    link.href = `https://localhost:3000/api/v1/admin/logs/export${
+      queryString ? `?${queryString}` : ""
+    }&token=${token}`;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  },
 };
 
 // Dashboard/Public API functions
