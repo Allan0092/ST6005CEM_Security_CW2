@@ -32,11 +32,13 @@ const apiCall = async (endpoint, options = {}) => {
 
     if (!response.ok) {
       // Create an error that preserves the response structure
-      const error = new Error(data.message || `HTTP error! status: ${response.status}`);
+      const error = new Error(
+        data.message || `HTTP error! status: ${response.status}`
+      );
       error.response = {
         status: response.status,
         statusText: response.statusText,
-        data: data, // This preserves the errors object and message
+        data: data,
       };
       throw error;
     }
@@ -340,9 +342,8 @@ export const adminAPI = {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        // Don't set Content-Type for FormData
       },
-      body: animeData, // FormData object
+      body: animeData, 
     });
   },
 
@@ -352,9 +353,8 @@ export const adminAPI = {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
-        // Don't set Content-Type for FormData
       },
-      body: animeData, // FormData object
+      body: animeData, 
     });
   },
 
@@ -416,6 +416,66 @@ export const adminAPI = {
         "Content-Type": "application/json",
       },
     });
+  },
+};
+
+// Dashboard/Public API functions
+export const dashboardAPI = {
+  getRecentAnime: async (limit = 12) => {
+    return apiCall(`/anime/recent?limit=${limit}`);
+  },
+
+  getPopularAnime: async (limit = 12) => {
+    return apiCall(`/anime/popular?limit=${limit}`);
+  },
+
+  getTopRatedAnime: async (limit = 12) => {
+    return apiCall(`/anime/top-rated?limit=${limit}`);
+  },
+
+  getTrendingAnime: async (limit = 12) => {
+    return apiCall(`/anime/trending?limit=${limit}`);
+  },
+
+  getAllAnime: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/anime${queryString ? `?${queryString}` : ""}`);
+  },
+};
+
+// Public anime API functions
+export const animeAPI = {
+  getAllAnime: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/anime${queryString ? `?${queryString}` : ""}`);
+  },
+
+  getAnime: async (id) => {
+    return apiCall(`/anime/${id}`);
+  },
+
+  getAnimeReviews: async (id, params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(
+      `/anime/${id}/reviews${queryString ? `?${queryString}` : ""}`
+    );
+  },
+
+  getRelatedAnime: async (id) => {
+    return apiCall(`/anime/${id}/related`);
+  },
+
+  toggleFavorite: async (id) => {
+    return apiCall(`/anime/${id}/favorite`, "POST", {}, true);
+  },
+
+  addView: async (id) => {
+    return apiCall(`/anime/${id}/view`, "POST", {}, true);
+  },
+
+  searchAnime: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/anime/search${queryString ? `?${queryString}` : ""}`);
   },
 };
 

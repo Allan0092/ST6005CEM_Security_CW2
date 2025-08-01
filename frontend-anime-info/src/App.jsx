@@ -5,6 +5,7 @@ import {
   Routes,
 } from "react-router-dom";
 import "./App.css";
+import AnimeDetailPage from "./components/AnimeDetailPage"; 
 import Dashboard from "./components/Dashboard";
 import EmailVerification from "./components/EmailVerification";
 import Favorites from "./components/Favorites";
@@ -16,7 +17,7 @@ import Profile from "./components/Profile";
 import Register from "./components/Register";
 import ResetPassword from "./components/ResetPassword";
 import Search from "./components/Search";
-import AdminDashboard from "./components/admin/AdminDashboard"; // Add this import
+import AdminDashboard from "./components/admin/AdminDashboard"; 
 import { AuthProvider } from "./context/AuthContext";
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             {/* Admin routes */}
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/anime/:id" element={<AnimeDetailPage />} />{" "}
             {/* For 404 pages */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

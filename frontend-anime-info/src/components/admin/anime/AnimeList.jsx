@@ -10,6 +10,7 @@ import {
   FaHeart,
   FaFilm,
 } from "react-icons/fa";
+import { getImageUrl } from "../../../utils/imageHelper";
 
 const AnimeList = ({
   anime,
@@ -23,7 +24,7 @@ const AnimeList = ({
   onAnimeDelete,
 }) => {
   const [selectedAnime, setSelectedAnime] = useState([]);
-  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState("grid"); 
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -179,9 +180,13 @@ const AnimeList = ({
             {/* Anime Image */}
             <div className="relative aspect-[3/4] overflow-hidden">
               <img
-                src={item.image?.url || "/images/anime-placeholder.jpg"}
+                src={getImageUrl(item.image?.url)}
                 alt={item.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                onError={(e) => {
+                  // Fallback to placeholder if image fails to load
+                  e.target.src = "/images/anime-placeholder.jpg";
+                }}
               />
               
               {/* Overlay */}

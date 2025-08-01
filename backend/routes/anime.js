@@ -9,6 +9,7 @@ const {
   getPopularAnime,
   getTopRatedAnime,
   getRecentAnime,
+  getTrendingAnime, 
   getAnimeByGenre,
   getAnimeByYear,
   getAnimeByStatus,
@@ -40,6 +41,7 @@ router.get("/search", validateAnimeQuery, searchAnime);
 router.get("/popular", getPopularAnime);
 router.get("/top-rated", getTopRatedAnime);
 router.get("/recent", getRecentAnime);
+router.get("/trending", getTrendingAnime); 
 router.get("/featured", getFeaturedAnime);
 router.get("/genre/:genre", getAnimeByGenre);
 router.get("/year/:year", getAnimeByYear);

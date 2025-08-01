@@ -7,20 +7,14 @@ const {
   deleteUser,
   getAllAnime,
   getAnimeDetails,
-  approveAnime,
-  rejectAnime,
-  getAllReviews,
-  moderateReview,
-  deleteReview,
-  getReports,
-  handleReport,
-  getSystemLogs,
-  backupDatabase,
+  createAnime,
+  updateAnime,
+  deleteAnime,
   getAnalytics,
-  manageFeatured,
   getContentStats,
 } = require("../controller/AdminController");
 const { protect, authorize } = require("../security/authMiddleware");
+const { upload } = require("../controller/fileUpload");
 
 const router = express.Router();
 
@@ -39,24 +33,11 @@ router.get("/users/:id", getUserDetails);
 router.put("/users/:id/status", updateUserStatus);
 router.delete("/users/:id", deleteUser);
 
-// Anime Management
+// Anime Management 
 router.get("/anime", getAllAnime);
 router.get("/anime/:id", getAnimeDetails);
-router.put("/anime/:id/approve", approveAnime);
-router.put("/anime/:id/reject", rejectAnime);
-
-// Review Moderation
-router.get("/reviews", getAllReviews);
-router.put("/reviews/:id/moderate", moderateReview);
-router.delete("/reviews/:id", deleteReview);
-
-// Reports & Moderation
-router.get("/reports", getReports);
-router.put("/reports/:id", handleReport);
-
-// System Management
-router.get("/logs", getSystemLogs);
-router.post("/backup", backupDatabase);
-router.put("/featured", manageFeatured);
+router.post("/anime", upload.single("image"), createAnime);
+router.put("/anime/:id", upload.single("image"), updateAnime);
+router.delete("/anime/:id", deleteAnime);
 
 module.exports = router;

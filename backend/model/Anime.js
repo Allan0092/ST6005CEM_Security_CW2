@@ -4,146 +4,97 @@ const animeSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, "Please provide anime title"],
+      required: [true, "Title is required"],
       trim: true,
-      maxlength: [200, "Title cannot be more than 200 characters"],
+      maxlength: [200, "Title cannot exceed 200 characters"],
     },
-    alternativeTitles: [
+
+    alternativeTitles: {
+      english: { type: String, trim: true },
+      japanese: { type: String, trim: true },
+      romaji: { type: String, trim: true },
+    },
+
+    description: {
+      type: String,
+      required: [true, "Description is required"],
+      trim: true,
+      maxlength: [2000, "Description cannot exceed 2000 characters"],
+    },
+
+    type: {
+      type: String,
+      enum: ["TV", "Movie", "OVA", "ONA", "Special", "Music"],
+      required: [true, "Type is required"],
+    },
+
+    status: {
+      type: String,
+      enum: ["airing", "completed", "upcoming", "cancelled"],
+      required: [true, "Status is required"],
+    },
+
+    year: {
+      type: Number,
+      required: [true, "Year is required"],
+      min: [1900, "Year cannot be before 1900"],
+      max: [2030, "Year cannot be after 2030"],
+    },
+
+    genres: [
       {
         type: String,
         trim: true,
       },
     ],
-    synopsis: {
+
+    studio: {
       type: String,
-      required: [true, "Please provide anime synopsis"],
-      maxlength: [2000, "Synopsis cannot be more than 2000 characters"],
+      trim: true,
     },
-    image: {
-      public_id: String,
-      url: {
-        type: String,
-        default: "./file_storage/coverpage/the-boy-and-the-heron-coverpage.jpg",
-      },
-    },
-    bannerImage: {
-      public_id: String,
-      url: String,
-    },
-    trailer: {
-      url: String,
-      site: {
-        type: String,
-        enum: ["youtube", "vimeo"],
-      },
-    },
-    rating: {
-      average: {
-        type: Number,
-        min: 0,
-        max: 10,
-        default: 0,
-      },
-      count: {
-        type: Number,
-        default: 0,
-      },
-    },
-    year: {
-      type: Number,
-      required: [true, "Please provide release year"],
-      min: 1900,
-      max: new Date().getFullYear() + 5,
-    },
-    season: {
-      type: String,
-      enum: ["winter", "spring", "summer", "fall"],
-    },
-    status: {
-      type: String,
-      enum: ["airing", "completed", "upcoming", "cancelled"],
-      required: true,
-    },
-    type: {
-      type: String,
-      enum: ["TV", "Movie", "OVA", "ONA", "Special", "Music"],
-      required: true,
-    },
+
     episodes: {
-      total: {
-        type: Number,
-        min: 1,
-      },
-      duration: {
-        type: Number,
-        min: 1,
-      },
+      total: { type: Number, min: 0 },
+      duration: { type: String }, // e.g., "24 min"
     },
-    genres: [
-      {
-        type: String,
-        required: true,
-      },
-    ],
-    studios: [
-      {
-        name: {
-          type: String,
-          required: true,
-        },
-        role: {
-          type: String,
-          enum: ["main", "supporting"],
-        },
-      },
-    ],
-    source: {
-      type: String,
-      enum: [
-        "manga",
-        "light-novel",
-        "web-novel",
-        "visual-novel",
-        "video-game",
-        "original",
-        "other",
-      ],
+
+    rating: {
+      average: { type: Number, default: 0, min: 0, max: 10 },
+      count: { type: Number, default: 0 },
     },
-    ageRating: {
-      type: String,
-      enum: ["G", "PG", "PG-13", "R", "R+", "Rx"],
-      default: "PG-13",
+
+    favorites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    popularity: {
+      type: Number,
+      default: 0,
     },
-    tags: [
-      {
-        type: String,
-        lowercase: true,
-      },
-    ],
-    characters: [
-      {
-        name: String,
-        role: {
-          type: String,
-          enum: ["main", "supporting", "background"],
-        },
-        image: String,
-        voiceActors: [
-          {
-            name: String,
-            language: String,
-            image: String,
-          },
-        ],
-      },
-    ],
-    staff: [
-      {
-        name: String,
-        role: String,
-        image: String,
-      },
-    ],
+
+    viewCount: {
+      type: Number,
+      default: 0,
+    },
+
+    image: {
+      url: { type: String },
+      filename: { type: String },
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
     relations: [
       {
         anime: {
@@ -156,49 +107,13 @@ const animeSchema = new mongoose.Schema(
             "sequel",
             "prequel",
             "side-story",
-            "alternative-version",
-            "summary",
-            "other",
+            "alternative",
+            "spin-off",
+            "adaptation",
           ],
         },
       },
     ],
-    externalLinks: [
-      {
-        site: String,
-        url: String,
-      },
-    ],
-    popularity: {
-      type: Number,
-      default: 0,
-    },
-    favorites: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    viewCount: {
-      type: Number,
-      default: 0,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
   {
     timestamps: true,
@@ -207,42 +122,21 @@ const animeSchema = new mongoose.Schema(
   }
 );
 
-// Virtual for formatted rating
-animeSchema.virtual("formattedRating").get(function () {
-  return this.rating.average.toFixed(1);
-});
-
-// Virtual for total duration
-animeSchema.virtual("totalDuration").get(function () {
-  if (this.episodes.total && this.episodes.duration) {
-    return this.episodes.total * this.episodes.duration;
-  }
-  return null;
-});
-
-// Virtual for favorites count
 animeSchema.virtual("favoritesCount").get(function () {
   return this.favorites ? this.favorites.length : 0;
 });
 
-// Index for search functionality
 animeSchema.index({
   title: "text",
-  synopsis: "text",
-  genres: "text",
-  tags: "text",
+  "alternativeTitles.english": "text",
+  studio: "text",
 });
-
-// Index for filtering
-animeSchema.index({ year: 1, status: 1, type: 1 });
-animeSchema.index({ "rating.average": -1 });
+animeSchema.index({ genres: 1 });
+animeSchema.index({ year: -1 });
+animeSchema.index({ status: 1 });
+animeSchema.index({ type: 1 });
+animeSchema.index({ rating: -1 });
 animeSchema.index({ popularity: -1 });
 animeSchema.index({ createdAt: -1 });
-
-// Middleware to update the updatedAt field
-animeSchema.pre("save", function (next) {
-  this.updatedAt = Date.now();
-  next();
-});
 
 module.exports = mongoose.model("Anime", animeSchema);

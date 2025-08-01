@@ -10,6 +10,7 @@ import {
   FaTrash,
 } from "react-icons/fa";
 import { adminAPI } from "../../../utils/api";
+import { getImageUrl } from "../../../utils/imageHelper";
 
 const AnimeDetail = ({
   anime,
@@ -157,13 +158,14 @@ const AnimeDetail = ({
               {/* Anime Header */}
               <div className="flex flex-col lg:flex-row gap-6 mb-8">
                 {/* Anime Image */}
-                <div className="flex-shrink-0">
+                <div className="relative aspect-[3/4] rounded-lg overflow-hidden">
                   <img
-                    src={
-                      animeDetails.image?.url || "/images/anime-placeholder.jpg"
-                    }
+                    src={getImageUrl(animeDetails.image?.url)}
                     alt={animeDetails.title}
-                    className="w-64 h-96 object-cover rounded-lg border border-slate-600"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = "/images/anime-placeholder.jpg";
+                    }}
                   />
                 </div>
 

@@ -1,63 +1,227 @@
-import { useState } from "react";
-import { FaHeart, FaPlay, FaSearch, FaStar } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import {
+  FaChartLine,
+  FaClock,
+  FaFilm,
+  FaFire,
+  FaHeart,
+  FaPlay,
+  FaSearch,
+  FaStar,
+} from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import Footer from "./Footer";
+import { dashboardAPI } from "../utils/api";
+import { getImageUrl } from "../utils/imageHelper";
 
 const Dashboard = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
 
-  const [featuredAnime] = useState([
-    {
-      id: 1,
-      title: "Attack on Titan",
-      image: "/images/anime-placeholder.jpg",
-      rating: 9.0,
-      year: 2023,
-    },
-    {
-      id: 2,
-      title: "Demon Slayer",
-      image: "/images/anime-placeholder.jpg",
-      rating: 8.7,
-      year: 2023,
-    },
-    {
-      id: 3,
-      title: "One Piece",
-      image: "/images/anime-placeholder.jpg",
-      rating: 9.2,
-      year: 2023,
-    },
-  ]);
+  const [dashboardData, setDashboardData] = useState({
+    recentAnime: [],
+    popularAnime: [],
+    topRatedAnime: [],
+    trendingAnime: [],
+  });
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoadingData(true);
+      setError(null);
+
+      const [
+        recentResponse,
+        popularResponse,
+        topRatedResponse,
+        trendingResponse,
+      ] = await Promise.all([
+        dashboardAPI.getRecentAnime(6),
+        dashboardAPI.getPopularAnime(6),
+        dashboardAPI.getTopRatedAnime(6),
+        dashboardAPI.getTrendingAnime(6),
+      ]);
+
+      setDashboardData({
+        recentAnime: recentResponse.success ? recentResponse.data.anime : [],
+        popularAnime: popularResponse.success ? popularResponse.data.anime : [],
+        topRatedAnime: topRatedResponse.success
+          ? topRatedResponse.data.anime
+          : [],
+        trendingAnime: trendingResponse.success
+          ? trendingResponse.data.anime
+          : [],
+      });
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+      setError("Failed to load anime data. Please try again.");
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  // Anime card component
+  const AnimeCard = ({ anime, showRating = true, showYear = true }) => (
+    <Link to={`/anime/${anime._id}`}>
+      {" "}
+      {/* Wrap with Link */}
+      <div
+        className="group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+        style={{
+          backgroundColor: "rgba(71, 85, 105, 0.15)",
+          border: "1px solid rgba(148, 163, 184, 0.25)",
+        }}
+      >
+        {/* Anime Image */}
+        <div className="relative aspect-[3/4] overflow-hidden">
+          <img
+            src={getImageUrl(anime.image?.url)}
+            alt={anime.title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+            onError={(e) => {
+              e.target.src = "/images/anime-placeholder.jpg";
+            }}
+          />
+
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <div className="text-center">
+              <FaPlay className="text-white text-2xl mb-2 mx-auto" />
+              <p className="text-white text-sm">View Details</p>
+            </div>
+          </div>
+
+          {/* Rating Badge */}
+          {showRating && anime.rating?.average > 0 && (
+            <div className="absolute top-2 right-2 bg-black/70 rounded-lg px-2 py-1 flex items-center">
+              <FaStar className="text-yellow-400 text-xs mr-1" />
+              <span className="text-white text-xs font-medium">
+                {anime.rating.average.toFixed(1)}
+              </span>
+            </div>
+          )}
+
+          {/* Type Badge */}
+          <div className="absolute top-2 left-2">
+            <span className="bg-purple-600/80 text-white text-xs px-2 py-1 rounded">
+              {anime.type}
+            </span>
+          </div>
+        </div>
+
+        {/* Anime Info */}
+        <div className="p-4">
+          <h3 className="text-white font-semibold text-sm mb-2 line-clamp-2 group-hover:text-purple-300 transition-colors">
+            {anime.title}
+          </h3>
+
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            {showYear && <span>{anime.year}</span>}
+            <span className="flex items-center">
+              <FaHeart className="mr-1" />
+              {anime.favoritesCount || 0}
+            </span>
+          </div>
+
+          {/* Genres */}
+          {anime.genres && anime.genres.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {anime.genres.slice(0, 2).map((genre) => (
+                <span
+                  key={genre}
+                  className="text-xs bg-slate-700/50 text-slate-300 px-2 py-1 rounded"
+                >
+                  {genre}
+                </span>
+              ))}
+              {anime.genres.length > 2 && (
+                <span className="text-xs text-slate-400">
+                  +{anime.genres.length - 2}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+
+  // Section component
+  const AnimeSection = ({ title, anime, icon: Icon, isLoading }) => (
+    <section className="mb-12">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-white flex items-center">
+          <Icon className="mr-3 text-purple-400" />
+          {title}
+        </h2>
+        <Link
+          to="/search"
+          className="text-purple-400 hover:text-purple-300 transition-colors text-sm flex items-center"
+        >
+          View All <FaSearch className="ml-1" />
+        </Link>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="aspect-[3/4] rounded-xl animate-pulse"
+              style={{ backgroundColor: "rgba(71, 85, 105, 0.15)" }}
+            />
+          ))}
+        </div>
+      ) : anime.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {anime.map((item) => (
+            <AnimeCard key={item._id} anime={item} />
+          ))}
+        </div>
+      ) : (
+        <div
+          className="text-center py-12 rounded-xl"
+          style={{
+            backgroundColor: "rgba(71, 85, 105, 0.15)",
+            border: "1px solid rgba(148, 163, 184, 0.25)",
+          }}
+        >
+          <FaFilm className="text-4xl text-slate-400 mx-auto mb-4" />
+          <p className="text-slate-400">No anime found in this category</p>
+        </div>
+      )}
+    </section>
+  );
 
   // Function to get the welcome message based on authentication status
   const getWelcomeMessage = () => {
-    if (isLoading) {
-      return "Loading...";
-    }
-
     if (isAuthenticated && user) {
-      // Extract first name if full name is provided
-      const firstName = user.name.split(" ")[0];
-      return `Welcome back, ${firstName}!`;
+      return `Welcome back, ${user.name}! 🎌`;
     }
-
-    return "Welcome to AnimeInfo!";
+    return "Welcome to AnimeInfo! 🎌";
   };
 
   // Function to get the subtitle message
   const getSubtitleMessage = () => {
-    if (isLoading) {
-      return "Please wait while we load your profile...";
+    if (isAuthenticated) {
+      return "Discover new anime, track your favorites, and connect with fellow otaku.";
     }
-
-    if (isAuthenticated && user) {
-      return "Discover amazing anime and track your favorites";
-    }
-
-    return "Your gateway to the world of anime. Sign in to track your favorites!";
+    return "Create an account to track your anime, write reviews, and discover new favorites.";
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -67,198 +231,121 @@ const Dashboard = () => {
           "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
       }}
     >
+      {/* Background effects */}
       <div className="absolute inset-0 overflow-hidden">
         <div
           className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full blur-3xl animate-pulse"
           style={{
             background:
-              "radial-gradient(circle, rgba(100, 116, 139, 0.4) 0%, rgba(71, 85, 105, 0.2) 100%)",
-          }}
-        ></div>
-        <div
-          className="absolute -bottom-1/2 -right-1/2 w-full h-full rounded-full blur-3xl animate-pulse delay-1000"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(148, 163, 184, 0.35) 0%, rgba(100, 116, 139, 0.18) 100%)",
-          }}
-        ></div>
-        <div
-          className="absolute top-1/3 left-1/3 w-96 h-96 rounded-full blur-3xl animate-pulse delay-500"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(71, 85, 105, 0.3) 0%, rgba(51, 65, 85, 0.15) 100%)",
+              "radial-gradient(circle, rgba(100, 116, 139, 0.3) 0%, rgba(71, 85, 105, 0.15) 100%)",
           }}
         ></div>
       </div>
 
-      {/* Main Content */}
-      <main className="w-full px-6 lg:px-8 py-8 relative z-10">
-        {/* Welcome Section */}
-        <div className="mb-16">
-          <div className="text-center mb-16">
-            <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent">
-              {getWelcomeMessage()}
-            </h2>
-            <p className="text-2xl text-slate-300">{getSubtitleMessage()}</p>
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-8">
+        {/* Hero Section */}
+        <section className="text-center mb-16">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+            {getWelcomeMessage()}
+          </h1>
+          <p className="text-lg md:text-xl text-slate-300 mb-8 max-w-3xl mx-auto">
+            {getSubtitleMessage()}
+          </p>
 
-            {/* Show login prompt for unauthenticated users */}
-            {!isLoading && !isAuthenticated && (
-              <div className="mt-8">
-                <Link
-                  to="/login"
-                  className="inline-flex items-center px-6 py-3 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 mr-4"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #64748b 0%, #475569 100%)",
-                    boxShadow: "0 10px 25px rgba(100, 116, 139, 0.3)",
-                  }}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  className="inline-flex items-center px-6 py-3 text-slate-300 font-semibold rounded-lg border border-slate-600 hover:border-slate-500 hover:text-white transition-all duration-300"
-                >
-                  Create Account
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Quick Stats */}
-          {isAuthenticated && user && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 max-w-6xl mx-auto">
-              <div
-                className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
-                style={{
-                  backgroundColor: "rgba(71, 85, 105, 0.2)",
-                  border: "1px solid rgba(148, 163, 184, 0.3)",
-                }}
-              >
-                <div className="text-4xl font-bold text-slate-200 mb-3">
-                  {user.stats?.totalWatched || 0}
-                </div>
-                <div className="text-slate-300 text-lg">Anime Watched</div>
-              </div>
-              <div
-                className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
-                style={{
-                  backgroundColor: "rgba(71, 85, 105, 0.2)",
-                  border: "1px solid rgba(148, 163, 184, 0.3)",
-                }}
-              >
-                <div className="text-4xl font-bold text-red-400 mb-3">
-                  {user.stats?.totalFavorites || 0}
-                </div>
-                <div className="text-slate-300 text-lg">Favorites</div>
-              </div>
-              <div
-                className="backdrop-blur-lg border rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300"
-                style={{
-                  backgroundColor: "rgba(71, 85, 105, 0.2)",
-                  border: "1px solid rgba(148, 163, 184, 0.3)",
-                }}
-              >
-                <div className="text-4xl font-bold text-slate-200 mb-3">
-                  {user.stats?.averageRating || "0.0"}
-                </div>
-                <div className="text-slate-300 text-lg">Avg Rating</div>
-              </div>
-            </div>
-          )}
-
-          {/* Featured Anime */}
-          <div className="mb-20">
-            <h3 className="text-3xl font-bold text-white mb-8 text-center">
-              Featured Anime
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
-              {featuredAnime.map((anime) => (
-                <div
-                  key={anime.id}
-                  className="backdrop-blur-lg border rounded-2xl overflow-hidden hover:transform hover:scale-105 transition-all duration-300 group"
-                  style={{
-                    backgroundColor: "rgba(71, 85, 105, 0.2)",
-                    border: "1px solid rgba(148, 163, 184, 0.3)",
-                  }}
-                >
-                  <div className="relative">
-                    <img
-                      src={anime.image}
-                      alt={anime.title}
-                      className="w-full h-72 object-cover"
-                      onError={(e) => {
-                        e.target.src = "/images/anime-placeholder.jpg";
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <button
-                        className="hover:bg-white/10 text-white rounded-full p-4 transform scale-90 group-hover:scale-100 transition-transform duration-300"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #64748b 0%, #475569 100%)",
-                        }}
-                      >
-                        <FaPlay className="text-xl" />
-                      </button>
-                    </div>
-                    <div
-                      className="absolute top-3 right-3 text-white px-3 py-2 rounded-lg text-sm flex items-center font-semibold"
-                      style={{ backgroundColor: "rgba(32, 31, 49, 0.9)" }}
-                    >
-                      <FaStar className="text-amber-400 mr-1" />
-                      {anime.rating}
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h4 className="text-xl font-semibold text-white mb-2">
-                      {anime.title}
-                    </h4>
-                    <p className="text-slate-400">{anime.year}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/search"
-              className="text-white rounded-2xl p-8 text-center transition-all duration-300 transform hover:scale-105"
-              style={{
-                background: "linear-gradient(135deg, #64748b 0%, #475569 100%)",
-                boxShadow: "0 15px 35px rgba(100, 116, 139, 0.4)",
-              }}
+              className="bg-purple-600 hover:bg-purple-500 text-white font-medium py-3 px-8 rounded-lg transition-colors flex items-center justify-center"
             >
-              <FaSearch className="text-4xl mb-6 mx-auto" />
-              <h3 className="text-2xl font-semibold mb-3">
-                Discover New Anime
-              </h3>
-              <p className="text-slate-200 text-lg">
-                Find your next favorite series
-              </p>
+              <FaSearch className="mr-2" />
+              Explore Anime
             </Link>
-            <Link
-              to="/favorites"
-              className="text-white rounded-2xl p-8 text-center transition-all duration-300 transform hover:scale-105"
-              style={{
-                background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
-                boxShadow: "0 15px 35px rgba(220, 38, 38, 0.4)",
-              }}
-            >
-              <FaHeart className="text-4xl mb-6 mx-auto" />
-              <h3 className="text-2xl font-semibold mb-3">My Favorites</h3>
-              <p className="text-red-100 text-lg">
-                {isAuthenticated
-                  ? "View your saved anime collection"
-                  : "Sign in to save your favorite anime"}
-              </p>
-            </Link>
+            {!isAuthenticated && (
+              <Link
+                to="/register"
+                className="bg-slate-600 hover:bg-slate-700 text-white font-medium py-3 px-8 rounded-lg transition-colors"
+              >
+                Get Started
+              </Link>
+            )}
           </div>
-        </div>
-      </main>
-      <Footer />
+        </section>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-8 p-4 bg-red-500/20 border border-red-500/30 rounded-lg text-center">
+            <p className="text-red-400">{error}</p>
+            <button
+              onClick={fetchDashboardData}
+              className="text-red-300 hover:text-red-200 underline text-sm mt-2"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {/* Anime Sections */}
+        <AnimeSection
+          title="Recently Added"
+          anime={dashboardData.recentAnime}
+          icon={FaClock}
+          isLoading={isLoadingData}
+        />
+
+        <AnimeSection
+          title="Trending Now"
+          anime={dashboardData.trendingAnime}
+          icon={FaFire}
+          isLoading={isLoadingData}
+        />
+
+        <AnimeSection
+          title="Top Rated"
+          anime={dashboardData.topRatedAnime}
+          icon={FaStar}
+          isLoading={isLoadingData}
+        />
+
+        <AnimeSection
+          title="Most Popular"
+          anime={dashboardData.popularAnime}
+          icon={FaChartLine} 
+          isLoading={isLoadingData}
+        />
+
+        {/* Call to Action for Unauthenticated Users */}
+        {!isAuthenticated && (
+          <section
+            className="text-center py-16 rounded-2xl mt-16"
+            style={{
+              backgroundColor: "rgba(71, 85, 105, 0.15)",
+              border: "1px solid rgba(148, 163, 184, 0.25)",
+            }}
+          >
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Ready to Start Your Anime Journey?
+            </h2>
+            <p className="text-slate-300 mb-8 max-w-2xl mx-auto">
+              Join thousands of anime fans. Track your watchlist, rate your
+              favorites, and discover hidden gems tailored just for you.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/register"
+                className="bg-purple-600 hover:bg-purple-500 text-white font-medium py-3 px-8 rounded-lg transition-colors"
+              >
+                Create Free Account
+              </Link>
+              <Link
+                to="/login"
+                className="border border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white font-medium py-3 px-8 rounded-lg transition-colors"
+              >
+                Sign In
+              </Link>
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 };

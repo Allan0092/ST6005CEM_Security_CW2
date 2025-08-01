@@ -25,7 +25,7 @@ const getAllAnime = async (req, res) => {
     const query = { isActive: true };
 
     if (genre) {
-      query.genres = { $in: Array.isArray(genre) ? genre : [genre] };
+      query.genres = { $in: [genre] };
     }
     if (year) {
       query.year = parseInt(year);
@@ -37,21 +37,20 @@ const getAllAnime = async (req, res) => {
       query.type = type;
     }
     if (search) {
-      query.$text = { $search: search };
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { "alternativeTitles.english": { $regex: search, $options: "i" } },
+        { "alternativeTitles.japanese": { $regex: search, $options: "i" } },
+        { studio: { $regex: search, $options: "i" } },
+      ];
     }
 
-    const options = {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      sort,
-      populate: [{ path: "createdBy", select: "name" }],
-    };
-
     const anime = await Anime.find(query)
-      .populate(options.populate)
       .sort(sort)
       .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)
+      .select('title image rating year genres viewCount type status studio episodes')
+      .lean(); 
 
     const total = await Anime.countDocuments(query);
 
@@ -86,20 +85,19 @@ const getAllAnime = async (req, res) => {
  */
 const getAnime = async (req, res) => {
   try {
-    const anime = await Anime.findById(req.params.id)
-      .populate("createdBy", "name")
-      .populate("relations.anime", "title image rating year");
+    const anime = await Anime.findById(req.params.id);
 
     if (!anime || !anime.isActive) {
       return res.status(404).json({
         success: false,
         message: "Anime not found",
-        errors: { anime: "Anime not found" },
+        errors: { anime: "Anime not found or is inactive" },
         data: null,
       });
     }
 
-    anime.viewCount += 1; // Increment view count
+    // Increment view count
+    anime.viewCount += 1;
     await anime.save({ validateBeforeSave: false });
 
     res.status(200).json({
@@ -313,11 +311,12 @@ const searchAnime = async (req, res) => {
  */
 const getPopularAnime = async (req, res) => {
   try {
-    const { limit = 20 } = req.query;
+    const { limit = 12 } = req.query;
 
     const anime = await Anime.find({ isActive: true })
-      .sort({ popularity: -1, "rating.average": -1 })
-      .limit(parseInt(limit));
+      .sort({ popularity: -1, "rating.average": -1, viewCount: -1 })
+      .limit(Number(limit))
+      .select("title image rating year genres viewCount favoritesCount type");
 
     res.status(200).json({
       success: true,
@@ -329,8 +328,7 @@ const getPopularAnime = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to retrieve popular anime",
-      errors: { server: "Internal server error" },
-      data: null,
+      data: { anime: [] },
     });
   }
 };
@@ -342,14 +340,15 @@ const getPopularAnime = async (req, res) => {
  */
 const getTopRatedAnime = async (req, res) => {
   try {
-    const { limit = 20 } = req.query;
+    const { limit = 12 } = req.query;
 
     const anime = await Anime.find({
       isActive: true,
-      "rating.count": { $gte: 10 }, // Minimum 10 ratings
+      "rating.count": { $gte: 1 }, // Only anime with at least 1 rating
     })
-      .sort({ "rating.average": -1 })
-      .limit(parseInt(limit));
+      .sort({ "rating.average": -1, "rating.count": -1 })
+      .limit(Number(limit))
+      .select("title image rating year genres viewCount favoritesCount type");
 
     res.status(200).json({
       success: true,
@@ -361,8 +360,7 @@ const getTopRatedAnime = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to retrieve top rated anime",
-      errors: { server: "Internal server error" },
-      data: null,
+      data: { anime: [] },
     });
   }
 };
@@ -374,11 +372,12 @@ const getTopRatedAnime = async (req, res) => {
  */
 const getRecentAnime = async (req, res) => {
   try {
-    const { limit = 20 } = req.query;
+    const { limit = 12 } = req.query;
 
     const anime = await Anime.find({ isActive: true })
       .sort({ createdAt: -1 })
-      .limit(parseInt(limit));
+      .limit(Number(limit))
+      .select("title image rating year genres viewCount favoritesCount type");
 
     res.status(200).json({
       success: true,
@@ -390,8 +389,46 @@ const getRecentAnime = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to retrieve recent anime",
-      errors: { server: "Internal server error" },
-      data: null,
+      data: { anime: [] },
+    });
+  }
+};
+
+/**
+ * @desc    Get trending anime (based on recent views)
+ * @route   GET /api/v1/anime/trending
+ * @access  Public
+ */
+const getTrendingAnime = async (req, res) => {
+  try {
+    const { limit = 12 } = req.query;
+
+    // Get anime with most views, prioritizing recent activity
+    const trending = await Anime.find({ isActive: true })
+      .sort({ viewCount: -1, "rating.average": -1, createdAt: -1 })
+      .limit(Number(limit))
+      .select(
+        "title image rating year genres viewCount favoritesCount type status"
+      )
+      .lean();
+
+    // Add computed fields
+    const enhancedTrending = trending.map((item) => ({
+      ...item,
+      favoritesCount: item.favorites ? item.favorites.length : 0,
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Trending anime retrieved successfully",
+      data: { anime: enhancedTrending },
+    });
+  } catch (error) {
+    console.error("Get trending anime error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve trending anime",
+      data: { anime: [] },
     });
   }
 };
@@ -547,35 +584,42 @@ const getAnimeByStatus = async (req, res) => {
  */
 const getRelatedAnime = async (req, res) => {
   try {
-    const anime = await Anime.findById(req.params.id).populate(
-      "relations.anime",
-      "title image rating year"
-    );
+    const anime = await Anime.findById(req.params.id);
 
-    if (!anime) {
+    if (!anime || !anime.isActive) {
       return res.status(404).json({
         success: false,
         message: "Anime not found",
-        errors: { anime: "Anime not found" },
-        data: null,
+        data: { relations: [] },
       });
     }
+
+    const relatedAnime = await Anime.find({
+      _id: { $ne: req.params.id }, // Exclude current anime
+      isActive: true,
+      genres: { $in: anime.genres }, // Same genres
+    })
+      .limit(6)
+      .select('title image rating year type')
+      .sort({ 'rating.average': -1 });
+
+    // Format as relations for compatibility
+    const relations = relatedAnime.map(related => ({
+      anime: related,
+      relationType: 'Similar'
+    }));
 
     res.status(200).json({
       success: true,
       message: "Related anime retrieved successfully",
-      data: {
-        relations: anime.relations,
-        total: anime.relations.length,
-      },
+      data: { relations },
     });
   } catch (error) {
     console.error("Get related anime error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to retrieve related anime",
-      errors: { server: "Internal server error" },
-      data: null,
+      data: { relations: [] },
     });
   }
 };
@@ -836,6 +880,7 @@ module.exports = {
   getPopularAnime,
   getTopRatedAnime,
   getRecentAnime,
+  getTrendingAnime,
   getAnimeByGenre,
   getAnimeByYear,
   getAnimeByStatus,
