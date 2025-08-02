@@ -518,16 +518,142 @@ export const animeAPI = {
   },
 
   toggleFavorite: async (id) => {
-    return apiCall(`/anime/${id}/favorite`, "POST", {}, true);
+    const token = localStorage.getItem("token");
+    return apiCall(`/anime/${id}/favorite`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
   },
 
   addView: async (id) => {
-    return apiCall(`/anime/${id}/view`, "POST", {}, true);
+    const token = localStorage.getItem("token");
+    return apiCall(`/anime/${id}/view`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
   },
 
   searchAnime: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     return apiCall(`/anime/search${queryString ? `?${queryString}` : ""}`);
+  },
+};
+
+// Review API functions
+export const reviewAPI = {
+  // Get all reviews with filtering
+  getReviews: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/reviews${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get single review by ID
+  getReview: async (reviewId) => {
+    return apiCall(`/reviews/${reviewId}`);
+  },
+
+  // Create new review
+  createReview: async (reviewData) => {
+    const token = localStorage.getItem("token");
+    return apiCall("/reviews", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reviewData),
+    });
+  },
+
+  // Update review
+  updateReview: async (reviewId, reviewData) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/reviews/${reviewId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reviewData),
+    });
+  },
+
+  // Delete review
+  deleteReview: async (reviewId) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/reviews/${reviewId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  // Get reviews for specific anime
+  getAnimeReviews: async (animeId, params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/reviews/anime/${animeId}${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get reviews by user
+  getUserReviews: async (userId, params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/reviews/user/${userId}${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Like/Unlike review
+  likeReview: async (reviewId) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/reviews/${reviewId}/like`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  unlikeReview: async (reviewId) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/reviews/${reviewId}/like`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  // Report review
+  reportReview: async (reviewId, reportData) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/reviews/${reviewId}/report`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reportData),
+    });
+  },
+
+  // Get recent reviews
+  getRecentReviews: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/reviews/recent${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get top reviews
+  getTopReviews: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/reviews/top${queryString ? `?${queryString}` : ''}`);
   },
 };
 

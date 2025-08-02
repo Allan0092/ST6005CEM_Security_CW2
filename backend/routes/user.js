@@ -18,13 +18,16 @@ const {
   unfollowUser,
   getFollowers,
   getFollowing,
+  updateEmail,
 } = require("../controller/UserController");
 const { protect, authorize } = require("../security/authMiddleware");
 const {
   validateUpdateProfile,
   validateWatchList,
+  validateUpdateEmail,
 } = require("../validation/userValidation");
 const { upload } = require("../controller/fileUpload");
+const decryptPassword = require("../middleware/decryptPassword");
 
 const router = express.Router();
 
@@ -41,6 +44,9 @@ router
 router.post("/avatar", upload.single("avatar"), uploadAvatar);
 router.get("/stats", getUserStats);
 router.get("/activity", getUserActivity);
+
+// Email update route 
+router.put("/email", decryptPassword, validateUpdateEmail, updateEmail);
 
 // Watch list routes
 router

@@ -286,14 +286,29 @@ const validatePreferences = (req, res, next) => {
  */
 const validateUpdateEmail = (req, res, next) => {
   const schema = Joi.object({
-    newEmail: Joi.string().email().required().lowercase().trim().messages({
-      "string.empty": "New email is required",
-      "string.email": "Please enter a valid email address",
-      "any.required": "New email is required",
-    }),
+    newEmail: Joi.string()
+      .email({
+        minDomainSegments: 2,
+        tlds: {
+          allow: [
+            "com", "net", "org", "edu", "gov", "mil", "int", "co", 
+            "uk", "de", "fr", "jp", "au", "ca", "in"
+          ],
+        },
+      })
+      .lowercase()
+      .trim()
+      .max(254)
+      .required()
+      .messages({
+        "string.email": "Please provide a valid email address",
+        "string.empty": "New email is required",
+        "string.max": "Email cannot exceed 254 characters",
+        "any.required": "New email is required",
+      }),
     password: Joi.string().required().messages({
-      "string.empty": "Current password is required",
-      "any.required": "Current password is required",
+      "string.empty": "Password is required",
+      "any.required": "Current password is required for email change",
     }),
   }).options({
     stripUnknown: true,

@@ -599,7 +599,7 @@ const updateEmail = async (req, res) => {
     const { newEmail, password } = req.validatedData;
     const userId = req.user.id;
 
-    // Find user and include password for verification
+    // Get the current user with password for verification
     const user = await User.findById(userId).select("+password");
 
     if (!user) {
@@ -614,94 +614,170 @@ const updateEmail = async (req, res) => {
     // Verify current password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
-        message: "Invalid current password",
+        message: "Invalid password",
         errors: { password: "Current password is incorrect" },
         data: null,
       });
     }
 
-    // Check if new email is already in use
-    const existingUser = await User.findOne({ email: newEmail });
-    if (existingUser) {
+    // Check if new email is different from current email
+    if (user.email === newEmail.toLowerCase()) {
       return res.status(400).json({
         success: false,
-        message: "Email already in use",
-        errors: { newEmail: "This email is already registered" },
+        message: "New email must be different from current email",
+        errors: { newEmail: "Please provide a different email address" },
         data: null,
       });
     }
 
-    // Generate email verification token
+    // Check if new email is already in use by another user
+    const existingUser = await User.findOne({ 
+      email: newEmail.toLowerCase(),
+      _id: { $ne: userId } // Exclude current user
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address already in use",
+        errors: { newEmail: "This email address is already registered" },
+        data: null,
+      });
+    }
+
+    // Also check if the new email is someone else's pending email
+    const existingPendingUser = await User.findOne({ 
+      pendingEmail: newEmail.toLowerCase(),
+      _id: { $ne: userId } // Exclude current user
+    });
+
+    if (existingPendingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address is already pending verification by another user",
+        errors: { newEmail: "This email address is already being verified by another user" },
+        data: null,
+      });
+    }
+
+    // Generate email verification token for new email
     const crypto = require("crypto");
     const verificationToken = crypto.randomBytes(20).toString("hex");
-    const hashedToken = crypto
+    const hashedVerificationToken = crypto
       .createHash("sha256")
       .update(verificationToken)
       .digest("hex");
 
-    // Update user with new email and verification token
-    user.email = newEmail;
-    user.isEmailVerified = false;
-    user.emailVerificationToken = hashedToken;
-    await user.save();
+    // Store the new email as pending and set verification token
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        pendingEmail: newEmail.toLowerCase(),
+        emailVerificationToken: hashedVerificationToken,
+        // Keeps isEmailVerified as true for current email, 
+        // it will be updated only after new email verification
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
 
-    // Send verification email
+    console.log(`Email change request: User ${userId} wants to change from ${user.email} to ${newEmail}`);
+
+    // Send verification email to new email address
     try {
+      const sendEmail = require("../utils/sendEmail");
       const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
       const message = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #64748b; text-align: center;">Email Verification</h1>
-          <div style="background: linear-gradient(135deg, #64748b 0%, #475569 100%); padding: 30px; border-radius: 10px; text-align: center;">
-            <h2 style="color: white; margin-bottom: 20px;">Verify Your New Email</h2>
-            <p style="color: white; margin-bottom: 20px;">
-              You have updated your email address. Please click the button below to verify your new email.
-            </p>
-            <a href="${verificationUrl}" style="display: inline-block; background: white; color: #64748b; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0;">
-              Verify Email
+          <h2 style="color: #7c3aed;">Verify Your New Email Address</h2>
+          <p>Hello ${user.name},</p>
+          <p>You've requested to change your email address from <strong>${user.email}</strong> to <strong>${newEmail}</strong>.</p>
+          <p>Please click the button below to verify your new email address:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" 
+               style="background-color: #7c3aed; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Verify New Email
             </a>
-            <p style="color: white; font-size: 14px; margin-top: 20px;">
-              If the button doesn't work, copy this link: ${verificationUrl}
-            </p>
           </div>
+          <p><strong>Important:</strong> Your email address will only be updated after you verify this new email. Until then, you can continue using your current email address (${user.email}) to log in.</p>
+          <p>If you didn't request this change, please contact our support team immediately.</p>
+          <p>This link will expire in 24 hours for security reasons.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #666; font-size: 12px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${verificationUrl}">${verificationUrl}</a>
+          </p>
         </div>
       `;
 
       await sendEmail({
         email: newEmail,
-        subject: "AnimeInfo - Verify Your New Email",
+        subject: "Verify Your New Email Address - AnimeInfo",
         message,
       });
 
       res.status(200).json({
         success: true,
-        message:
-          "Email updated successfully. Please check your new email for verification.",
+        message: "Verification email sent to your new email address",
         data: {
-          email: newEmail,
-          isEmailVerified: false,
+          message: "Please check your new email and click the verification link to complete the email change",
+          pendingEmail: newEmail,
+          currentEmail: user.email,
         },
       });
-    } catch (emailError) {
-      console.error("Verification email sending failed:", emailError);
 
-      // Revert email change if email fails
-      user.email = req.user.email;
-      user.isEmailVerified = req.user.isEmailVerified;
-      user.emailVerificationToken = undefined;
-      await user.save();
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+      
+      // Rollback the pending email change
+      await User.findByIdAndUpdate(userId, {
+        $unset: { 
+          pendingEmail: 1, 
+          emailVerificationToken: 1 
+        },
+      });
 
       return res.status(500).json({
         success: false,
         message: "Failed to send verification email",
-        errors: { email: "Could not send verification email" },
+        errors: { email: "Could not send verification email. Please try again." },
         data: null,
       });
     }
+
   } catch (error) {
     console.error("Update email error:", error);
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      const errors = {};
+      Object.values(error.errors).forEach((err) => {
+        errors[err.path] = err.message;
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors,
+        data: null,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address already exists",
+        errors: { newEmail: "This email address is already registered" },
+        data: null,
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Failed to update email",
@@ -720,7 +796,7 @@ const getRecommendations = async (req, res) => {
   });
 };
 
-// Update preferences validation - remove notifications field
+// Update preferences validation 
 const updatePreferences = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(

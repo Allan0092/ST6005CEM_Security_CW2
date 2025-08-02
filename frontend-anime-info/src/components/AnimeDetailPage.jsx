@@ -1,20 +1,25 @@
 import { useEffect, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
-  FaArrowLeft,
-  FaBookmark,
-  FaCalendar,
-  FaClock,
-  FaEye,
-  FaFilm,
   FaHeart,
+  FaRegHeart,
   FaPlay,
   FaStar,
-  FaUsers,
+  FaCalendarAlt,
+  FaTv,
+  FaUser,
+  FaEye,
+  FaArrowLeft,
+  FaSpinner,
+  FaExclamationTriangle,
+  FaPlus,
+  FaEdit,
 } from "react-icons/fa";
-import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { animeAPI } from "../utils/api";
 import { getImageUrl } from "../utils/imageHelper";
+import ReviewList from "./reviews/ReviewList";
+import ReviewForm from "./reviews/ReviewForm";
 
 const AnimeDetailPage = () => {
   const { id } = useParams();
@@ -22,51 +27,49 @@ const AnimeDetailPage = () => {
   const { user, isAuthenticated } = useAuth();
 
   const [anime, setAnime] = useState(null);
-  const [reviews, setReviews] = useState([]);
   const [relatedAnime, setRelatedAnime] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [userReview, setUserReview] = useState(null);
+  const [hasUserReview, setHasUserReview] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchAnimeDetails();
-      fetchAnimeReviews();
       fetchRelatedAnime();
+      if (isAuthenticated) {
+        checkUserReview();
+      }
     }
-  }, [id]);
+  }, [id, isAuthenticated]);
 
   const fetchAnimeDetails = async () => {
     try {
       setIsLoading(true);
-      const response = await animeAPI.getAnime(id);
+      setError(null);
 
+      const response = await animeAPI.getAnime(id);
+      
       if (response.success) {
         setAnime(response.data.anime);
-        // Check if user has favorited this anime
-        if (isAuthenticated && user?.favorites?.includes(id)) {
-          setIsFavorite(true);
+        setIsFavorite(response.data.anime.isFavorite || false);
+        
+        // Track view
+        if (isAuthenticated) {
+          animeAPI.addView(id).catch(console.error);
         }
       } else {
-        setError(response.message || "Failed to load anime details");
+        setError(response.message || "Anime not found");
       }
     } catch (error) {
-      console.error("Failed to fetch anime details:", error);
-      setError("Failed to load anime details");
+      console.error("Failed to fetch anime:", error);
+      setError("Failed to load anime details. Please try again.");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const fetchAnimeReviews = async () => {
-    try {
-      const response = await animeAPI.getAnimeReviews(id);
-      if (response.success) {
-        setReviews(response.data.reviews || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch reviews:", error);
     }
   };
 
@@ -74,10 +77,20 @@ const AnimeDetailPage = () => {
     try {
       const response = await animeAPI.getRelatedAnime(id);
       if (response.success) {
-        setRelatedAnime(response.data.relations || []);
+        setRelatedAnime(response.data.relatedAnime || []);
       }
     } catch (error) {
       console.error("Failed to fetch related anime:", error);
+    }
+  };
+
+  const checkUserReview = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setHasUserReview(false);
+    } catch (error) {
+      console.error("Failed to check user review:", error);
     }
   };
 
@@ -90,34 +103,66 @@ const AnimeDetailPage = () => {
     try {
       const response = await animeAPI.toggleFavorite(id);
       if (response.success) {
-        setIsFavorite(!isFavorite);
+        setIsFavorite(response.data.isFavorite);
+        setAnime(prev => ({
+          ...prev,
+          favoritesCount: response.data.favoritesCount
+        }));
       }
     } catch (error) {
       console.error("Failed to toggle favorite:", error);
     }
   };
 
+  const handleReviewSubmit = (newReview) => {
+    setUserReview(newReview);
+    setHasUserReview(true);
+    setShowReviewForm(false);
+    if (activeTab === "reviews") {
+      setActiveTab("overview");
+      setTimeout(() => setActiveTab("reviews"), 100);
+    }
+  };
+
+  const handleWriteReview = () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    setShowReviewForm(true);
+  };
+
+  const handleEditReview = () => {
+    setShowReviewForm(true);
+  };
+
   const getStatusColor = (status) => {
     const colors = {
-      airing: "bg-green-500",
-      completed: "bg-blue-500",
-      upcoming: "bg-yellow-500",
-      cancelled: "bg-red-500",
-      hiatus: "bg-orange-500",
+      airing: "text-green-400",
+      completed: "text-blue-400",
+      upcoming: "text-yellow-400",
+      cancelled: "text-red-400",
     };
-    return colors[status] || "bg-gray-500";
+    return colors[status] || "text-slate-400";
   };
 
   const getTypeColor = (type) => {
     const colors = {
-      TV: "bg-purple-500",
-      Movie: "bg-red-500",
-      OVA: "bg-blue-500",
-      ONA: "bg-green-500",
-      Special: "bg-yellow-500",
+      TV: "text-purple-400",
+      Movie: "text-blue-400",
+      OVA: "text-green-400",
+      ONA: "text-orange-400",
+      Special: "text-pink-400",
+      Music: "text-red-400",
     };
-    return colors[type] || "bg-gray-500";
+    return colors[type] || "text-slate-400";
   };
+
+  const tabs = [
+    { id: "overview", label: "Overview", icon: FaTv },
+    { id: "reviews", label: "Reviews", icon: FaStar },
+    { id: "related", label: "Related", icon: FaPlay },
+  ];
 
   if (isLoading) {
     return (
@@ -129,8 +174,8 @@ const AnimeDetailPage = () => {
         }}
       >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-400 mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading anime details...</p>
+          <FaSpinner className="text-4xl text-purple-400 animate-spin mx-auto mb-4" />
+          <p className="text-white">Loading anime details...</p>
         </div>
       </div>
     );
@@ -145,17 +190,22 @@ const AnimeDetailPage = () => {
             "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
         }}
       >
-        <div className="text-center">
-          <FaFilm className="text-6xl text-slate-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Anime Not Found
-          </h2>
+        <div
+          className="text-center p-12 rounded-2xl backdrop-blur-lg max-w-md"
+          style={{
+            backgroundColor: "rgba(71, 85, 105, 0.15)",
+            border: "1px solid rgba(148, 163, 184, 0.25)",
+          }}
+        >
+          <FaExclamationTriangle className="text-6xl text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">Anime Not Found</h2>
           <p className="text-slate-400 mb-6">{error}</p>
           <button
-            onClick={() => navigate(-1)}
-            className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2 rounded-lg transition-colors"
+            onClick={() => navigate("/dashboard")}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors flex items-center mx-auto"
           >
-            Go Back
+            <FaArrowLeft className="mr-2" />
+            Back to Dashboard
           </button>
         </div>
       </div>
@@ -170,7 +220,7 @@ const AnimeDetailPage = () => {
           "linear-gradient(135deg, #201f31 0%, #1a1827 25%, #151420 50%, #1a1827 75%, #201f31 100%)",
       }}
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
@@ -180,11 +230,11 @@ const AnimeDetailPage = () => {
           Back
         </button>
 
-        {/* Anime Header */}
-        <div className="flex flex-col lg:flex-row gap-8 mb-12">
-          {/* Anime Poster */}
-          <div className="lg:w-1/4">
-            <div className="relative aspect-[3/4] rounded-xl overflow-hidden">
+        {/* Hero Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Poster */}
+          <div className="lg:col-span-1">
+            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl">
               <img
                 src={getImageUrl(anime.image?.url)}
                 alt={anime.title}
@@ -193,374 +243,307 @@ const AnimeDetailPage = () => {
                   e.target.src = "/images/anime-placeholder.jpg";
                 }}
               />
+              
+              {/* Favorite Button */}
+              <button
+                onClick={toggleFavorite}
+                className={`absolute top-4 right-4 p-3 rounded-full transition-all duration-300 ${
+                  isFavorite
+                    ? "bg-red-500 text-white"
+                    : "bg-black/50 text-white hover:bg-red-500"
+                }`}
+              >
+                {isFavorite ? <FaHeart /> : <FaRegHeart />}
+              </button>
+
+              {/* Rating Badge */}
+              {anime.rating?.average > 0 && (
+                <div className="absolute bottom-4 left-4 bg-black/70 rounded-lg px-3 py-2 flex items-center">
+                  <FaStar className="text-yellow-400 mr-2" />
+                  <span className="text-white font-bold">
+                    {anime.rating.average.toFixed(1)}
+                  </span>
+                  <span className="text-slate-300 text-sm ml-1">
+                    ({anime.rating.count})
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Action Buttons */}
-            {isAuthenticated && (
-              <div className="mt-4 space-y-2">
-                <button
-                  onClick={toggleFavorite}
-                  className={`w-full flex items-center justify-center px-4 py-2 rounded-lg transition-colors ${
-                    isFavorite
-                      ? "bg-red-600 hover:bg-red-500 text-white"
-                      : "bg-slate-600 hover:bg-slate-500 text-white"
-                  }`}
-                >
-                  <FaHeart className="mr-2" />
-                  {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-                </button>
+            {/* Quick Actions */}
+            <div className="mt-6 space-y-3">
+              <button
+                onClick={toggleFavorite}
+                className={`w-full py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center ${
+                  isFavorite
+                    ? "bg-red-600 hover:bg-red-500 text-white"
+                    : "bg-slate-600 hover:bg-slate-500 text-white"
+                }`}
+              >
+                {isFavorite ? <FaHeart className="mr-2" /> : <FaRegHeart className="mr-2" />}
+                {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+              </button>
 
-                <button className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
-                  <FaBookmark className="mr-2" />
-                  Add to Watchlist
+              {isAuthenticated && (
+                <button
+                  onClick={handleWriteReview}
+                  className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium transition-colors flex items-center justify-center"
+                >
+                  {hasUserReview ? (
+                    <>
+                      <FaEdit className="mr-2" />
+                      Edit Review
+                    </>
+                  ) : (
+                    <>
+                      <FaPlus className="mr-2" />
+                      Write Review
+                    </>
+                  )}
                 </button>
-              </div>
-            )}
+              )}
+
+              {!isAuthenticated && (
+                <button
+                  onClick={() => navigate("/login")}
+                  className="w-full py-3 rounded-xl bg-slate-600 hover:bg-slate-500 text-white font-medium transition-colors flex items-center justify-center"
+                >
+                  <FaUser className="mr-2" />
+                  Login to Review
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Anime Info */}
-          <div className="lg:w-3/4">
-            <div className="space-y-6">
-              {/* Title and Basic Info */}
-              <div>
-                <h1 className="text-4xl font-bold text-white mb-2">
-                  {anime.title}
-                </h1>
+          {/* Main Info */}
+          <div className="lg:col-span-2">
+            <div
+              className="p-8 rounded-2xl h-full"
+              style={{
+                backgroundColor: "rgba(71, 85, 105, 0.15)",
+                border: "1px solid rgba(148, 163, 184, 0.25)",
+              }}
+            >
+              {/* Title */}
+              <h1 className="text-4xl font-bold text-white mb-4">{anime.title}</h1>
 
-                {anime.alternativeTitles?.english && (
-                  <p className="text-xl text-slate-300 mb-3">
-                    {anime.alternativeTitles.english}
-                  </p>
-                )}
+              {/* Alternative Titles */}
+              {anime.alternativeTitles && (
+                <div className="mb-6">
+                  {anime.alternativeTitles.english && (
+                    <p className="text-slate-300 text-lg">
+                      {anime.alternativeTitles.english}
+                    </p>
+                  )}
+                  {anime.alternativeTitles.japanese && (
+                    <p className="text-slate-400">
+                      {anime.alternativeTitles.japanese}
+                    </p>
+                  )}
+                </div>
+              )}
 
-                <div className="flex flex-wrap items-center gap-3 mb-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-white text-sm ${getStatusColor(
-                      anime.status
-                    )}`}
-                  >
+              {/* Meta Information */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center p-3 rounded-lg bg-slate-700/30">
+                  <FaCalendarAlt className="text-purple-400 mx-auto mb-2" />
+                  <div className="text-white font-medium">{anime.year}</div>
+                  <div className="text-slate-400 text-sm">Year</div>
+                </div>
+
+                <div className="text-center p-3 rounded-lg bg-slate-700/30">
+                  <FaTv className={`mx-auto mb-2 ${getTypeColor(anime.type)}`} />
+                  <div className="text-white font-medium">{anime.type}</div>
+                  <div className="text-slate-400 text-sm">Type</div>
+                </div>
+
+                <div className="text-center p-3 rounded-lg bg-slate-700/30">
+                  <div className={`w-3 h-3 rounded-full mx-auto mb-2 ${
+                    anime.status === 'airing' ? 'bg-green-400' :
+                    anime.status === 'completed' ? 'bg-blue-400' :
+                    anime.status === 'upcoming' ? 'bg-yellow-400' : 'bg-red-400'
+                  }`}></div>
+                  <div className={`font-medium capitalize ${getStatusColor(anime.status)}`}>
                     {anime.status}
-                  </span>
-                  <span
-                    className={`px-3 py-1 rounded-full text-white text-sm ${getTypeColor(
-                      anime.type
-                    )}`}
-                  >
-                    {anime.type}
-                  </span>
-                  <span className="text-slate-400 flex items-center">
-                    <FaCalendar className="mr-1" />
-                    {anime.year}
-                  </span>
-                  {anime.episodes?.total && (
-                    <span className="text-slate-400 flex items-center">
-                      <FaPlay className="mr-1" />
-                      {anime.episodes.total} episodes
-                    </span>
-                  )}
-                  {anime.episodes?.duration && (
-                    <span className="text-slate-400 flex items-center">
-                      <FaClock className="mr-1" />
-                      {anime.episodes.duration}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Statistics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div
-                  className="text-center p-4 rounded-lg"
-                  style={{
-                    backgroundColor: "rgba(71, 85, 105, 0.15)",
-                    border: "1px solid rgba(148, 163, 184, 0.25)",
-                  }}
-                >
-                  <FaStar className="text-yellow-400 text-2xl mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white">
-                    {anime.rating?.average?.toFixed(1) || "N/A"}
                   </div>
-                  <div className="text-sm text-slate-400">Rating</div>
+                  <div className="text-slate-400 text-sm">Status</div>
                 </div>
 
-                <div
-                  className="text-center p-4 rounded-lg"
-                  style={{
-                    backgroundColor: "rgba(71, 85, 105, 0.15)",
-                    border: "1px solid rgba(148, 163, 184, 0.25)",
-                  }}
-                >
-                  <FaEye className="text-blue-400 text-2xl mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white">
+                <div className="text-center p-3 rounded-lg bg-slate-700/30">
+                  <FaEye className="text-blue-400 mx-auto mb-2" />
+                  <div className="text-white font-medium">
                     {(anime.viewCount || 0).toLocaleString()}
                   </div>
-                  <div className="text-sm text-slate-400">Views</div>
-                </div>
-
-                <div
-                  className="text-center p-4 rounded-lg"
-                  style={{
-                    backgroundColor: "rgba(71, 85, 105, 0.15)",
-                    border: "1px solid rgba(148, 163, 184, 0.25)",
-                  }}
-                >
-                  <FaHeart className="text-red-400 text-2xl mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white">
-                    {(anime.favoritesCount || 0).toLocaleString()}
-                  </div>
-                  <div className="text-sm text-slate-400">Favorites</div>
-                </div>
-
-                <div
-                  className="text-center p-4 rounded-lg"
-                  style={{
-                    backgroundColor: "rgba(71, 85, 105, 0.15)",
-                    border: "1px solid rgba(148, 163, 184, 0.25)",
-                  }}
-                >
-                  <FaUsers className="text-green-400 text-2xl mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white">
-                    {anime.popularity || 0}
-                  </div>
-                  <div className="text-sm text-slate-400">Popularity</div>
+                  <div className="text-slate-400 text-sm">Views</div>
                 </div>
               </div>
 
               {/* Description */}
-              {anime.description && (
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-3">
-                    Synopsis
-                  </h3>
-                  <div className="text-slate-300 leading-relaxed">
-                    {showFullDescription || anime.description.length <= 300
-                      ? anime.description
-                      : `${anime.description.slice(0, 300)}...`}
-
-                    {anime.description.length > 300 && (
-                      <button
-                        onClick={() =>
-                          setShowFullDescription(!showFullDescription)
-                        }
-                        className="text-purple-400 hover:text-purple-300 ml-2 transition-colors"
-                      >
-                        {showFullDescription ? "Show Less" : "Read More"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-white mb-3">Synopsis</h3>
+                <p className="text-slate-300 leading-relaxed">
+                  {showFullDescription
+                    ? anime.description
+                    : `${anime.description.substring(0, 300)}${
+                        anime.description.length > 300 ? "..." : ""
+                      }`}
+                </p>
+                {anime.description.length > 300 && (
+                  <button
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                    className="text-purple-400 hover:text-purple-300 transition-colors mt-2"
+                  >
+                    {showFullDescription ? "Show Less" : "Read More"}
+                  </button>
+                )}
+              </div>
 
               {/* Genres */}
               {anime.genres && anime.genres.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-3">
-                    Genres
-                  </h3>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-white mb-3">Genres</h3>
                   <div className="flex flex-wrap gap-2">
                     {anime.genres.map((genre) => (
-                      <Link
+                      <span
                         key={genre}
-                        to={`/search?genre=${encodeURIComponent(genre)}`}
-                        className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm hover:bg-purple-500/30 transition-colors"
+                        className="px-3 py-1 bg-purple-600/20 text-purple-300 rounded-full text-sm border border-purple-600/30"
                       >
                         {genre}
-                      </Link>
+                      </span>
                     ))}
                   </div>
                 </div>
               )}
+
+              {/* Studio & Episodes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {anime.studio && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Studio</h3>
+                    <p className="text-slate-300">{anime.studio}</p>
+                  </div>
+                )}
+
+                {anime.episodes && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Episodes</h3>
+                    <p className="text-slate-300">
+                      {anime.episodes.total || "TBA"}
+                      {anime.episodes.duration && ` • ${anime.episodes.duration}`}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Additional Information */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* Information Panel */}
-          <div
-            className="p-6 rounded-xl"
-            style={{
-              backgroundColor: "rgba(71, 85, 105, 0.15)",
-              border: "1px solid rgba(148, 163, 184, 0.25)",
-            }}
-          >
-            <h3 className="text-xl font-semibold text-white mb-4">
-              Information
-            </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Studio:</span>
-                <span className="text-white">{anime.studio || "Unknown"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Type:</span>
-                <span className="text-white">{anime.type}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Status:</span>
-                <span className="text-white">{anime.status}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Episodes:</span>
-                <span className="text-white">
-                  {anime.episodes?.total || "Unknown"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Duration:</span>
-                <span className="text-white">
-                  {anime.episodes?.duration || "Unknown"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Year:</span>
-                <span className="text-white">{anime.year}</span>
-              </div>
-            </div>
+        {/* Tabs */}
+        <div className="mb-8">
+          <div className="flex space-x-1 p-1 rounded-xl" style={{
+            backgroundColor: "rgba(71, 85, 105, 0.15)",
+            border: "1px solid rgba(148, 163, 184, 0.25)",
+          }}>
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all flex-1 justify-center ${
+                  activeTab === tab.id
+                    ? "bg-purple-600 text-white shadow-lg"
+                    : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                }`}
+              >
+                <tab.icon className="mr-2" />
+                {tab.label}
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Alternative Titles */}
-          {anime.alternativeTitles && (
+        {/* Tab Content */}
+        <div className="mb-8">
+          {activeTab === "overview" && (
             <div
-              className="p-6 rounded-xl"
+              className="p-8 rounded-2xl"
               style={{
                 backgroundColor: "rgba(71, 85, 105, 0.15)",
                 border: "1px solid rgba(148, 163, 184, 0.25)",
               }}
             >
-              <h3 className="text-xl font-semibold text-white mb-4">
-                Alternative Titles
-              </h3>
-              <div className="space-y-3">
-                {anime.alternativeTitles.english && (
-                  <div>
-                    <span className="text-slate-400 block">English:</span>
-                    <span className="text-white">
-                      {anime.alternativeTitles.english}
-                    </span>
-                  </div>
-                )}
-                {anime.alternativeTitles.japanese && (
-                  <div>
-                    <span className="text-slate-400 block">Japanese:</span>
-                    <span className="text-white">
-                      {anime.alternativeTitles.japanese}
-                    </span>
-                  </div>
-                )}
-                {anime.alternativeTitles.romaji && (
-                  <div>
-                    <span className="text-slate-400 block">Romaji:</span>
-                    <span className="text-white">
-                      {anime.alternativeTitles.romaji}
-                    </span>
-                  </div>
-                )}
+              <h3 className="text-2xl font-bold text-white mb-6">Overview</h3>
+              <div className="prose prose-invert max-w-none">
+                <p className="text-slate-300 leading-relaxed text-lg">
+                  {anime.description}
+                </p>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Reviews Section */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Reviews</h2>
-            {isAuthenticated && (
-              <button className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg transition-colors">
-                Write Review
-              </button>
-            )}
-          </div>
+          {activeTab === "reviews" && (
+            <ReviewList animeId={id} />
+          )}
 
-          {reviews.length > 0 ? (
-            <div className="space-y-4">
-              {reviews.slice(0, 3).map((review) => (
+          {activeTab === "related" && (
+            <div>
+              {relatedAnime.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {relatedAnime.map((related) => (
+                    <Link
+                      key={related._id}
+                      to={`/anime/${related._id}`}
+                      className="group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105"
+                      style={{
+                        backgroundColor: "rgba(71, 85, 105, 0.15)",
+                        border: "1px solid rgba(148, 163, 184, 0.25)",
+                      }}
+                    >
+                      <div className="aspect-[3/4]">
+                        <img
+                          src={getImageUrl(related.image?.url)}
+                          alt={related.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src = "/images/anime-placeholder.jpg";
+                          }}
+                        />
+                      </div>
+                      <div className="p-3">
+                        <h4 className="text-white text-sm font-medium line-clamp-2 group-hover:text-purple-300 transition-colors">
+                          {related.title}
+                        </h4>
+                        <p className="text-slate-400 text-xs mt-1">{related.year}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
                 <div
-                  key={review._id}
-                  className="p-4 rounded-lg"
+                  className="text-center py-12 rounded-xl"
                   style={{
                     backgroundColor: "rgba(71, 85, 105, 0.15)",
                     border: "1px solid rgba(148, 163, 184, 0.25)",
                   }}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center">
-                      <img
-                        src={
-                          review.user.avatar || "/images/user-placeholder.jpg"
-                        }
-                        alt={review.user.name}
-                        className="w-8 h-8 rounded-full mr-3"
-                      />
-                      <span className="text-white font-medium">
-                        {review.user.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-yellow-400">
-                      <FaStar className="mr-1" />
-                      <span>{review.rating}/10</span>
-                    </div>
-                  </div>
-                  <p className="text-slate-300">{review.content}</p>
-                </div>
-              ))}
-
-              {reviews.length > 3 && (
-                <div className="text-center">
-                  <button className="text-purple-400 hover:text-purple-300 transition-colors">
-                    View All Reviews ({reviews.length})
-                  </button>
+                  <FaPlay className="text-4xl text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-400">No related anime found</p>
                 </div>
               )}
             </div>
-          ) : (
-            <div
-              className="text-center py-12 rounded-xl"
-              style={{
-                backgroundColor: "rgba(71, 85, 105, 0.15)",
-                border: "1px solid rgba(148, 163, 184, 0.25)",
-              }}
-            >
-              <FaStar className="text-4xl text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-400">
-                No reviews yet. Be the first to review!
-              </p>
-            </div>
           )}
         </div>
-
-        {/* Related Anime */}
-        {relatedAnime.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-6">
-              Related Anime
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {relatedAnime.map((related) => (
-                <Link
-                  key={related.anime._id}
-                  to={`/anime/${related.anime._id}`}
-                  className="group"
-                >
-                  <div className="aspect-[3/4] rounded-lg overflow-hidden mb-2">
-                    <img
-                      src={getImageUrl(related.anime.image?.url)}
-                      alt={related.anime.title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <h3 className="text-white text-sm font-medium group-hover:text-purple-300 transition-colors line-clamp-2">
-                    {related.anime.title}
-                  </h3>
-                  <p className="text-slate-400 text-xs">
-                    {related.relationType}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Review Form Modal */}
+      {showReviewForm && (
+        <ReviewForm
+          anime={anime}
+          existingReview={userReview}
+          isOpen={showReviewForm}
+          onClose={() => setShowReviewForm(false)}
+          onSubmit={handleReviewSubmit}
+        />
+      )}
     </div>
   );
 };

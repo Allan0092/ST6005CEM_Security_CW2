@@ -150,12 +150,15 @@ const validateReviewQuery = (req, res, next) => {
         "-createdAt",
         "rating",
         "-rating",
-        "helpfulVotes",
-        "-helpfulVotes"
+        "helpfulVotes.count",
+        "-helpfulVotes.count"
       )
       .optional()
       .default("-createdAt"),
-    spoilers: Joi.boolean().optional().default(false),
+    spoilers: Joi.string().valid("true", "false").optional().default("false"),
+    anime: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+    user: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+    rating: Joi.number().integer().min(1).max(10).optional(),
   }).options({
     stripUnknown: true,
   });
@@ -191,8 +194,8 @@ const validateObjectId = (paramName = "id") => {
     if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
       return res.status(400).json({
         success: false,
-        message: `Invalid ${paramName}`,
-        errors: { [paramName]: `Invalid ${paramName} format` },
+        message: "Invalid ID format",
+        errors: { [paramName]: "Invalid ID format" },
         data: null,
       });
     }

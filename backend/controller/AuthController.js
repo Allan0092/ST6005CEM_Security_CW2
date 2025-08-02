@@ -707,12 +707,24 @@ const resetPassword = async (req, res) => {
  */
 const verifyEmail = async (req, res) => {
   try {
-    // Get hashed token from URL params
+    const verificationToken = req.params.token;
+
+    if (!verificationToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification token",
+        errors: { token: "Verification token is required" },
+        data: null,
+      });
+    }
+
+    // Hash the token to match stored hash
     const hashedToken = crypto
       .createHash("sha256")
-      .update(req.params.token)
+      .update(verificationToken)
       .digest("hex");
 
+    // Find user with this verification token
     const user = await User.findOne({
       emailVerificationToken: hashedToken,
     });
@@ -720,29 +732,61 @@ const verifyEmail = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "Invalid verification token",
-        errors: { token: "Email verification token is invalid" },
+        message: "Invalid or expired verification token",
+        errors: { token: "Verification token is invalid or has expired" },
         data: null,
       });
     }
 
-    // Mark email as verified
-    user.isEmailVerified = true;
-    user.emailVerificationToken = undefined;
-    await user.save({ validateBeforeSave: false });
+    // Check if this is an email change verification (pendingEmail exists)
+    if (user.pendingEmail) {
+      // EMAIL CHANGE VERIFICATION
+      console.log(`Email change verification for user ${user._id}: ${user.email} -> ${user.pendingEmail}`);
+      
+      // Update email to pending email and clear all verification fields
+      user.email = user.pendingEmail;
+      user.pendingEmail = undefined;
+      user.isEmailVerified = true;
+      user.emailVerificationToken = undefined;
+      
+      await user.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Email verified successfully! You can now log in.",
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          isEmailVerified: user.isEmailVerified,
+      res.status(200).json({
+        success: true,
+        message: "Email updated successfully! You can now log in with your new email address.",
+        data: {
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            isEmailVerified: user.isEmailVerified,
+          },
         },
-      },
-    });
+      });
+    } else {
+      // NEW USER EMAIL VERIFICATION
+      console.log(`New user email verification for user ${user._id}: ${user.email}`);
+      
+      // Normal email verification for new accounts
+      user.isEmailVerified = true;
+      user.emailVerificationToken = undefined;
+      
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: "Email verified successfully! You can now log in to your account.",
+        data: {
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            isEmailVerified: user.isEmailVerified,
+          },
+        },
+      });
+    }
+
   } catch (error) {
     console.error("Email verification error:", error);
     res.status(500).json({

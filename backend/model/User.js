@@ -32,6 +32,15 @@ const userSchema = new mongoose.Schema(
         "Please provide a valid email",
       ],
     },
+    pendingEmail: {
+      type: String,
+      lowercase: true,
+      match: [
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+        "Please provide a valid email",
+      ],
+      default: undefined,
+    },
     password: {
       type: String,
       required: [true, "Please provide a password"],
@@ -141,15 +150,18 @@ const userSchema = new mongoose.Schema(
 
 // Virtual for user stats
 userSchema.virtual("stats").get(function () {
+  // Ensure arrays exist before accessing length
+  const favorites = this.favorites || [];
+  const watchList = this.watchList || [];
+  
   return {
-    totalFavorites: this.favorites.length,
-    totalWatched: this.watchList.filter((item) => item.status === "completed")
-      .length,
+    totalFavorites: favorites.length,
+    totalWatched: watchList.filter((item) => item.status === "completed").length,
     averageRating:
-      this.watchList.length > 0
+      watchList.length > 0
         ? (
-            this.watchList.reduce((sum, item) => sum + (item.rating || 0), 0) /
-            this.watchList.length
+            watchList.reduce((sum, item) => sum + (item.rating || 0), 0) /
+            watchList.length
           ).toFixed(1)
         : 0,
   };
@@ -240,5 +252,18 @@ userSchema.methods.verifyOTP = function (enteredOTP) {
 
   return { success: false, error: "Invalid OTP code" };
 };
+
+// pre-save hook to debug email changes
+userSchema.pre('save', function(next) {
+  if (this.isModified('email') || this.isModified('pendingEmail')) {
+    console.log(`User ${this._id} email state:`, {
+      email: this.email,
+      pendingEmail: this.pendingEmail,
+      isEmailVerified: this.isEmailVerified,
+      hasToken: !!this.emailVerificationToken
+    });
+  }
+  next();
+});
 
 module.exports = mongoose.model("User", userSchema);
