@@ -572,7 +572,7 @@ export const animeAPI = {
 
   searchAnime: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
-    return apiCall(`/anime/search${queryString ? `?${queryString}` : ""}`);
+    return apiCall(`/search/anime${queryString ? `?${queryString}` : ""}`);
   },
 };
 

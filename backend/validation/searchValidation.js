@@ -43,27 +43,31 @@ const validateSearch = (req, res, next) => {
         "any.only":
           "Status must be one of: airing, completed, upcoming, cancelled",
       }),
-    rating: Joi.object({
-      min: Joi.number().min(0).max(10).optional(),
-      max: Joi.number().min(0).max(10).optional(),
-    }).optional(),
+    rating: Joi.string()
+      .pattern(/^(\d+)-(\d+)$|^\d+$/)
+      .optional()
+      .messages({
+        "string.pattern.base": "Rating must be in format 'min-max' or 'min'",
+      }),
     sort: Joi.string()
       .valid(
         "relevance",
         "title",
         "-title",
-        "rating",
-        "-rating",
+        "rating.average",
+        "-rating.average",
         "year",
         "-year",
         "createdAt",
-        "-createdAt"
+        "-createdAt",
+        "viewCount",
+        "-viewCount"
       )
       .optional()
       .default("relevance")
       .messages({
         "any.only":
-          "Sort must be one of: relevance, title, -title, rating, -rating, year, -year, createdAt, -createdAt",
+          "Sort must be one of: relevance, title, -title, rating.average, -rating.average, year, -year, createdAt, -createdAt, viewCount, -viewCount",
       }),
     page: Joi.number().integer().min(1).optional().default(1).messages({
       "number.min": "Page must be at least 1",
@@ -100,20 +104,18 @@ const validateSearch = (req, res, next) => {
   }
 
   // Additional validation: ensure min rating is less than max rating
-  if (
-    value.rating &&
-    value.rating.min &&
-    value.rating.max &&
-    value.rating.min > value.rating.max
-  ) {
-    return res.status(400).json({
-      success: false,
-      message: "Validation failed",
-      errors: {
-        rating: "Minimum rating cannot be greater than maximum rating",
-      },
-      data: null,
-    });
+  if (value.rating && value.rating.includes("-")) {
+    const [min, max] = value.rating.split("-").map(Number);
+    if (min > max) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: {
+          rating: "Minimum rating cannot be greater than maximum rating",
+        },
+        data: null,
+      });
+    }
   }
 
   req.validatedQuery = value;

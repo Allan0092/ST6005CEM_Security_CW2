@@ -30,12 +30,19 @@ const globalSearch = async (req, res) => {
     // Search anime
     if (type === "all" || type === "anime") {
       const animeResults = await Anime.find({
-        $text: { $search: q },
+        $or: [
+          { title: { $regex: q, $options: "i" } },
+          { "alternativeTitles.english": { $regex: q, $options: "i" } },
+          { "alternativeTitles.japanese": { $regex: q, $options: "i" } },
+          { "alternativeTitles.romaji": { $regex: q, $options: "i" } },
+          { studio: { $regex: q, $options: "i" } },
+          { genres: { $elemMatch: { $regex: q, $options: "i" } } },
+        ],
         isActive: true,
       })
         .select("title image rating year genres")
         .limit(type === "anime" ? limit : 5)
-        .sort({ score: { $meta: "textScore" } });
+        .sort({ "rating.average": -1, viewCount: -1 });
 
       results.anime = animeResults;
     }
@@ -47,7 +54,8 @@ const globalSearch = async (req, res) => {
         isEmailVerified: true,
       })
         .select("name avatar role createdAt")
-        .limit(type === "users" ? limit : 5);
+        .limit(type === "users" ? limit : 5)
+        .sort({ name: 1 });
 
       results.users = userResults;
     }
@@ -63,7 +71,7 @@ const globalSearch = async (req, res) => {
       })
         .populate("user", "name avatar")
         .populate("anime", "title image")
-        .select("title content rating createdAt")
+        .select("title rating createdAt")
         .limit(type === "reviews" ? limit : 5)
         .sort({ createdAt: -1 });
 
@@ -109,6 +117,7 @@ const searchAnime = async (req, res) => {
       genre,
       year,
       status,
+      type,
       rating,
       sort = "relevance",
       page = 1,
@@ -118,64 +127,166 @@ const searchAnime = async (req, res) => {
     let query = { isActive: true };
     let sortOption = {};
 
-    // Text search
-    if (q) {
-      query.$text = { $search: q };
-      if (sort === "relevance") {
-        sortOption = { score: { $meta: "textScore" } };
+    // Enhanced text search with partial matching
+    if (q && q.trim()) {
+      const searchTerm = q.trim();
+      
+      query.$or = [
+        // Main title search - case insensitive
+        { title: { $regex: searchTerm, $options: "i" } },
+        
+        // Alternative titles search
+        { "alternativeTitles.english": { $regex: searchTerm, $options: "i" } },
+        { "alternativeTitles.japanese": { $regex: searchTerm, $options: "i" } },
+        { "alternativeTitles.romaji": { $regex: searchTerm, $options: "i" } },
+        
+        // Studio search
+        { studio: { $regex: searchTerm, $options: "i" } },
+        
+        // Genre search (partial genre matching)
+        { genres: { $elemMatch: { $regex: searchTerm, $options: "i" } } },
+        
+        // Description search (for specific terms)
+        { description: { $regex: searchTerm, $options: "i" } }
+      ];
+    }
+
+    if (genre && genre.trim()) {
+      if (query.$or) {
+        query = {
+          $and: [
+            { $or: query.$or },
+            { genres: { $in: [genre] } },
+            { isActive: true }
+          ]
+        };
+      } else {
+        query.genres = { $in: [genre] };
       }
     }
 
-    // Filter by genre
-    if (genre) {
-      query.genres = { $in: Array.isArray(genre) ? genre : [genre] };
+    if (year && year.trim()) {
+      const yearValue = parseInt(year);
+      if (!isNaN(yearValue)) {
+        if (query.$and) {
+          query.$and.push({ year: yearValue });
+        } else if (query.$or) {
+          query = {
+            $and: [
+              { $or: query.$or },
+              { year: yearValue },
+              { isActive: true }
+            ]
+          };
+        } else {
+          query.year = yearValue;
+        }
+      }
     }
 
-    // Filter by year
-    if (year) {
-      query.year = year;
+    if (status && status.trim()) {
+      if (query.$and) {
+        query.$and.push({ status: status });
+      } else if (query.$or) {
+        query = {
+          $and: [
+            { $or: query.$or },
+            { status: status },
+            { isActive: true }
+          ]
+        };
+      } else {
+        query.status = status;
+      }
     }
 
-    // Filter by status
-    if (status) {
-      query.status = status;
+    if (type && type.trim() && type !== "all") {
+      if (query.$and) {
+        query.$and.push({ type: type });
+      } else if (query.$or) {
+        query = {
+          $and: [
+            { $or: query.$or },
+            { type: type },
+            { isActive: true }
+          ]
+        };
+      } else {
+        query.type = type;
+      }
     }
 
-    // Filter by rating
-    if (rating) {
-      if (rating.min) query["rating.average"] = { $gte: rating.min };
-      if (rating.max) {
-        query["rating.average"] = query["rating.average"]
-          ? { ...query["rating.average"], $lte: rating.max }
-          : { $lte: rating.max };
+    if (rating && rating.trim()) {
+      const [min, max] = rating.split('-').map(Number);
+      const ratingFilter = max ? 
+        { "rating.average": { $gte: min, $lt: max === 10 ? 11 : max } } :
+        { "rating.average": { $gte: min } };
+
+      if (query.$and) {
+        query.$and.push(ratingFilter);
+      } else if (query.$or) {
+        query = {
+          $and: [
+            { $or: query.$or },
+            ratingFilter,
+            { isActive: true }
+          ]
+        };
+      } else {
+        query = { ...query, ...ratingFilter };
       }
     }
 
     // Set sort option
-    if (sort !== "relevance") {
-      sortOption = sort;
+    if (sort === "relevance" && q && q.trim()) {
+      sortOption = {
+        "rating.average": -1,
+        "rating.count": -1,
+        viewCount: -1,
+        createdAt: -1
+      };
+    } else if (sort !== "relevance") {
+      const sortField = sort.startsWith('-') ? sort.slice(1) : sort;
+      const sortDirection = sort.startsWith('-') ? -1 : 1;
+      sortOption[sortField] = sortDirection;
+    } else {
+      sortOption = { "rating.average": -1, "rating.count": -1, viewCount: -1 };
     }
 
+    console.log("Search Query:", JSON.stringify(query, null, 2));
+    console.log("Sort Option:", sortOption);
+
+    // Execute query
     const anime = await Anime.find(query)
       .sort(sortOption)
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .select("title image rating year genres status type");
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .select("title alternativeTitles image rating year genres status type studio episodes viewCount favorites")
+      .lean();
 
+    // Get total count
     const total = await Anime.countDocuments(query);
+
+    // Add favoritesCount virtual field
+    const animeWithCounts = anime.map(item => ({
+      ...item,
+      favoritesCount: item.favorites?.length || 0,
+    }));
+
+    console.log(`Search Results: Found ${total} anime for query "${q}"`);
 
     res.status(200).json({
       success: true,
       message: "Anime search completed successfully",
       data: {
-        anime,
+        anime: animeWithCounts,
         pagination: {
           total,
           page: parseInt(page),
           pages: Math.ceil(total / limit),
           limit: parseInt(limit),
         },
-        filters: { q, genre, year, status, rating, sort },
+        filters: { q, genre, year, status, type, rating, sort },
       },
     });
   } catch (error) {
@@ -252,7 +363,7 @@ const searchUsers = async (req, res) => {
  */
 const searchReviews = async (req, res) => {
   try {
-    const { q, page = 1, limit = 20, spoilers = false } = req.validatedQuery;
+    const { q, page = 1, limit = 20 } = req.validatedQuery;
 
     if (!q) {
       return res.status(400).json({
@@ -263,28 +374,26 @@ const searchReviews = async (req, res) => {
       });
     }
 
-    let query = {
+    const reviews = await Review.find({
       $or: [
         { title: { $regex: q, $options: "i" } },
         { content: { $regex: q, $options: "i" } },
       ],
       status: "active",
-    };
-
-    // Filter spoilers if requested
-    if (!spoilers) {
-      query.spoilerWarning = false;
-    }
-
-    const reviews = await Review.find(query)
+    })
       .populate("user", "name avatar")
       .populate("anime", "title image")
-      .select("title content rating spoilerWarning helpfulVotes createdAt")
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
 
-    const total = await Review.countDocuments(query);
+    const total = await Review.countDocuments({
+      $or: [
+        { title: { $regex: q, $options: "i" } },
+        { content: { $regex: q, $options: "i" } },
+      ],
+      status: "active",
+    });
 
     res.status(200).json({
       success: true,
@@ -323,30 +432,49 @@ const getSearchSuggestions = async (req, res) => {
       });
     }
 
-    // Get anime title suggestions
-    const animeSuggestions = await Anime.find({
-      title: { $regex: `^${q}`, $options: "i" },
+    // Get suggestions from anime titles
+    const suggestions = await Anime.find({
+      $or: [
+        { title: { $regex: `^${q}`, $options: "i" } },
+        { "alternativeTitles.english": { $regex: `^${q}`, $options: "i" } },
+        { studio: { $regex: `^${q}`, $options: "i" } },
+      ],
       isActive: true,
     })
-      .select("title")
-      .limit(5)
-      .sort({ popularity: -1 });
+      .select("title alternativeTitles.english studio")
+      .limit(10)
+      .lean();
 
-    const suggestions = animeSuggestions.map((anime) => ({
-      text: anime.title,
-      type: "anime",
-    }));
+    const suggestionList = [];
+    suggestions.forEach((anime) => {
+      if (anime.title.toLowerCase().startsWith(q.toLowerCase())) {
+        suggestionList.push(anime.title);
+      }
+      if (
+        anime.alternativeTitles?.english
+          ?.toLowerCase()
+          .startsWith(q.toLowerCase())
+      ) {
+        suggestionList.push(anime.alternativeTitles.english);
+      }
+      if (anime.studio?.toLowerCase().startsWith(q.toLowerCase())) {
+        suggestionList.push(anime.studio);
+      }
+    });
+
+    // Remove duplicates and limit results
+    const uniqueSuggestions = [...new Set(suggestionList)].slice(0, 8);
 
     res.status(200).json({
       success: true,
       message: "Search suggestions retrieved successfully",
-      data: { suggestions },
+      data: { suggestions: uniqueSuggestions },
     });
   } catch (error) {
     console.error("Search suggestions error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to get search suggestions",
+      message: "Failed to retrieve search suggestions",
       data: { suggestions: [] },
     });
   }
@@ -363,6 +491,9 @@ const getPopularSearches = async (req, res) => {
         "One Piece",
         "My Hero Academia",
         "Naruto",
+        "Dragon Ball",
+        "Death Note",
+        "Fullmetal Alchemist",
       ],
     },
   });
@@ -399,10 +530,12 @@ const getSearchFilters = async (req, res) => {
 
     // Get available years
     const years = await Anime.distinct("year", { isActive: true });
-    years.sort((a, b) => b - a); // Sort descending
+
+    // Get available types
+    const types = await Anime.distinct("type", { isActive: true });
 
     // Get available statuses
-    const statuses = ["airing", "completed", "upcoming"];
+    const statuses = await Anime.distinct("status", { isActive: true });
 
     res.status(200).json({
       success: true,
@@ -410,23 +543,18 @@ const getSearchFilters = async (req, res) => {
       data: {
         filters: {
           genres: genres.sort(),
-          years: years.slice(0, 20), // Last 20 years
-          statuses,
-          ratings: [
-            { label: "9+ Excellent", min: 9, max: 10 },
-            { label: "8+ Very Good", min: 8, max: 10 },
-            { label: "7+ Good", min: 7, max: 10 },
-            { label: "6+ Fair", min: 6, max: 10 },
-          ],
+          years: years.sort((a, b) => b - a), 
+          types: types.sort(),
+          statuses: statuses.sort(),
         },
       },
     });
   } catch (error) {
-    console.error("Get search filters error:", error);
+    console.error("Search filters error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to retrieve search filters",
-      data: { filters: { genres: [], years: [], statuses: [] } },
+      data: { filters: {} },
     });
   }
 };
