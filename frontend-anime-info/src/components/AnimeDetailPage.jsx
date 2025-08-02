@@ -77,7 +77,9 @@ const AnimeDetailPage = () => {
     try {
       const response = await animeAPI.getRelatedAnime(id);
       if (response.success) {
-        setRelatedAnime(response.data.relatedAnime || []);
+        // Extract anime objects from relations array
+        const relatedAnimeList = response.data.relations?.map(relation => relation.anime) || [];
+        setRelatedAnime(relatedAnimeList);
       }
     } catch (error) {
       console.error("Failed to fetch related anime:", error);
@@ -512,7 +514,19 @@ const AnimeDetailPage = () => {
                         <h4 className="text-white text-sm font-medium line-clamp-2 group-hover:text-purple-300 transition-colors">
                           {related.title}
                         </h4>
-                        <p className="text-slate-400 text-xs mt-1">{related.year}</p>
+                        <div className="flex items-center justify-between text-xs text-slate-400 mt-1">
+                          <span>{related.year}</span>
+                          <span>{related.type}</span>
+                        </div>
+                        {/* Show rating if available */}
+                        {related.rating?.average > 0 && (
+                          <div className="flex items-center mt-1">
+                            <FaStar className="text-yellow-400 text-xs mr-1" />
+                            <span className="text-xs text-slate-300">
+                              {related.rating.average.toFixed(1)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </Link>
                   ))}

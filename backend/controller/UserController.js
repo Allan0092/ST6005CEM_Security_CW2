@@ -461,18 +461,82 @@ const removeFromWatchList = async (req, res) => {
  */
 const getFavorites = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate({
-      path: "favorites",
-      select: "title image rating year genres status episodes",
-      options: { sort: { createdAt: -1 } },
-    });
+    const {
+      page = 1,
+      limit = 20,
+      sort = "-createdAt",
+      genre,
+      year,
+      type,
+    } = req.query;
+
+    const user = await User.findById(req.user.id)
+      .populate({
+        path: "favorites",
+        match: { isActive: true },
+        select: "title image rating year genres type status studio episodes viewCount favoritesCount",
+        options: {
+          sort: sort,
+          limit: Number(limit),
+          skip: (Number(page) - 1) * Number(limit),
+        },
+      })
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+        errors: { user: "User account not found" },
+        data: null,
+      });
+    }
+
+    let favorites = user.favorites || [];
+
+    // Apply filters if provided
+    if (genre) {
+      favorites = favorites.filter((anime) =>
+        anime.genres.some((g) => g.toLowerCase().includes(genre.toLowerCase()))
+      );
+    }
+
+    if (year) {
+      favorites = favorites.filter((anime) => anime.year === Number(year));
+    }
+
+    if (type) {
+      favorites = favorites.filter((anime) => anime.type === type);
+    }
+
+    // Add favorite date (we'll use the order in the array as a proxy)
+    favorites = favorites.map((anime, index) => ({
+      ...anime,
+      favoritesCount: anime.favorites?.length || 0,
+      dateAdded: new Date(Date.now() - index * 1000 * 60 * 60 * 24), // Approximate based on order
+    }));
+
+    const total = favorites.length;
 
     res.status(200).json({
       success: true,
       message: "Favorites retrieved successfully",
       data: {
-        favorites: user.favorites,
-        total: user.favorites.length,
+        favorites,
+        pagination: {
+          total,
+          page: Number(page),
+          pages: Math.ceil(total / Number(limit)),
+          limit: Number(limit),
+        },
+        stats: {
+          totalFavorites: total,
+          genres: [...new Set(favorites.flatMap((anime) => anime.genres))],
+          years: [...new Set(favorites.map((anime) => anime.year))].sort(
+            (a, b) => b - a
+          ),
+          types: [...new Set(favorites.map((anime) => anime.type))],
+        },
       },
     });
   } catch (error) {
@@ -487,51 +551,78 @@ const getFavorites = async (req, res) => {
 };
 
 /**
- * @desc    Add to favorites
+ * @desc    Add anime to favorites
  * @route   POST /api/v1/users/favorites
  * @access  Private
  */
 const addToFavorites = async (req, res) => {
   try {
-    const { animeId } = req.body;
+    const { animeId } = req.validatedData;
+    const userId = req.user.id;
 
-    // Check if anime exists
+    // Check if anime exists and is active
     const anime = await Anime.findById(animeId);
-    if (!anime) {
+    if (!anime || !anime.isActive) {
       return res.status(404).json({
         success: false,
         message: "Anime not found",
-        errors: { anime: "Anime not found" },
+        errors: { anime: "Anime not found or is not active" },
         data: null,
       });
     }
 
-    const user = await User.findById(req.user.id);
+    // Get user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+        errors: { user: "User account not found" },
+        data: null,
+      });
+    }
 
     // Check if already in favorites
     if (user.favorites.includes(animeId)) {
       return res.status(400).json({
         success: false,
-        message: "Already in favorites",
+        message: "Anime is already in favorites",
         errors: { favorite: "This anime is already in your favorites" },
         data: null,
       });
     }
 
+    // Add to favorites
     user.favorites.push(animeId);
-    await user.save();
+    anime.favorites.push(userId);
 
-    // Update anime favorites count
-    anime.favorites += 1;
-    await anime.save();
+    // Save both documents
+    await Promise.all([user.save(), anime.save()]);
 
     res.status(200).json({
       success: true,
-      message: "Added to favorites successfully",
-      data: { animeId },
+      message: "Anime added to favorites",
+      data: {
+        anime: {
+          id: anime._id,
+          title: anime.title,
+          image: anime.image,
+          favoritesCount: anime.favorites.length,
+        },
+      },
     });
   } catch (error) {
     console.error("Add to favorites error:", error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Anime is already in favorites",
+        errors: { favorite: "This anime is already in your favorites" },
+        data: null,
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Failed to add to favorites",
@@ -542,41 +633,59 @@ const addToFavorites = async (req, res) => {
 };
 
 /**
- * @desc    Remove from favorites
+ * @desc    Remove anime from favorites
  * @route   DELETE /api/v1/users/favorites/:animeId
  * @access  Private
  */
 const removeFromFavorites = async (req, res) => {
   try {
     const { animeId } = req.params;
+    const userId = req.user.id;
 
-    const user = await User.findById(req.user.id);
-
-    // Check if in favorites
-    const favoriteIndex = user.favorites.indexOf(animeId);
-    if (favoriteIndex === -1) {
+    // Get user
+    const user = await User.findById(userId);
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Not in favorites",
+        message: "User not found",
+        errors: { user: "User account not found" },
+        data: null,
+      });
+    }
+
+    // Check if anime is in favorites
+    if (!user.favorites.includes(animeId)) {
+      return res.status(404).json({
+        success: false,
+        message: "Anime not found in favorites",
         errors: { favorite: "This anime is not in your favorites" },
         data: null,
       });
     }
 
-    user.favorites.splice(favoriteIndex, 1);
-    await user.save();
+    // Remove from user's favorites
+    user.favorites = user.favorites.filter(
+      (id) => id.toString() !== animeId.toString()
+    );
 
-    // Update anime favorites count
+    // Also remove user from anime's favorites
     const anime = await Anime.findById(animeId);
-    if (anime && anime.favorites > 0) {
-      anime.favorites -= 1;
+    if (anime) {
+      anime.favorites = anime.favorites.filter(
+        (id) => id.toString() !== userId.toString()
+      );
       await anime.save();
     }
 
+    await user.save();
+
     res.status(200).json({
       success: true,
-      message: "Removed from favorites successfully",
-      data: null,
+      message: "Anime removed from favorites",
+      data: {
+        removedAnimeId: animeId,
+        favoritesCount: anime ? anime.favorites.length : 0,
+      },
     });
   } catch (error) {
     console.error("Remove from favorites error:", error);

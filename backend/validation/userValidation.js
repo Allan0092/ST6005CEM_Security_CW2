@@ -192,11 +192,12 @@ const validateWatchList = (req, res, next) => {
 const validateAddFavorite = (req, res, next) => {
   const schema = Joi.object({
     animeId: Joi.string()
-      .required()
       .pattern(/^[0-9a-fA-F]{24}$/)
+      .required()
       .messages({
         "string.empty": "Anime ID is required",
         "string.pattern.base": "Invalid anime ID format",
+        "any.required": "Anime ID is required",
       }),
   }).options({
     stripUnknown: true,

@@ -837,34 +837,79 @@ const getAnimeStaff = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Toggle anime favorite status for user
+ * @route   POST /api/v1/anime/:id/favorite
+ * @access  Private
+ */
 const toggleAnimeFavorite = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
     const animeId = req.params.id;
+    const userId = req.user.id;
 
+    // Check if anime exists and is active
+    const anime = await Anime.findById(animeId);
+    if (!anime || !anime.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: "Anime not found",
+        errors: { anime: "Anime not found or is not active" },
+        data: null,
+      });
+    }
+
+    // Get user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+        errors: { user: "User account not found" },
+        data: null,
+      });
+    }
+
+    // Check if anime is already in user's favorites
     const isFavorite = user.favorites.includes(animeId);
 
     if (isFavorite) {
-      user.favorites.pull(animeId);
-      // Decrease anime favorites count
-      await Anime.findByIdAndUpdate(animeId, { $inc: { favorites: -1 } });
+      // Remove from favorites
+      user.favorites = user.favorites.filter(
+        (id) => id.toString() !== animeId.toString()
+      );
+      anime.favorites = anime.favorites.filter(
+        (id) => id.toString() !== userId.toString()
+      );
     } else {
+      // Add to favorites
       user.favorites.push(animeId);
-      // Increase anime favorites count
-      await Anime.findByIdAndUpdate(animeId, { $inc: { favorites: 1 } });
+      anime.favorites.push(userId);
     }
 
-    await user.save();
+    // Save both documents
+    await Promise.all([user.save(), anime.save()]);
 
     res.status(200).json({
       success: true,
-      message: isFavorite ? "Removed from favorites" : "Added to favorites",
-      data: { isFavorite: !isFavorite },
+      message: isFavorite
+        ? "Anime removed from favorites"
+        : "Anime added to favorites",
+      data: {
+        isFavorite: !isFavorite,
+        favoritesCount: anime.favorites.length,
+        anime: {
+          id: anime._id,
+          title: anime.title,
+          image: anime.image,
+        },
+      },
     });
   } catch (error) {
+    console.error("Toggle favorite error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to toggle favorite",
+      errors: { server: "Internal server error" },
       data: null,
     });
   }

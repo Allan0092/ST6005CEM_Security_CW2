@@ -25,6 +25,7 @@ const {
   validateUpdateProfile,
   validateWatchList,
   validateUpdateEmail,
+  validateAddFavorite,
 } = require("../validation/userValidation");
 const { upload } = require("../controller/fileUpload");
 const decryptPassword = require("../middleware/decryptPassword");
@@ -57,7 +58,7 @@ router
 router.delete("/watchlist/:animeId", removeFromWatchList);
 
 // Favorites routes
-router.route("/favorites").get(getFavorites).post(addToFavorites);
+router.route("/favorites").get(getFavorites).post(validateAddFavorite, addToFavorites);
 router.delete("/favorites/:animeId", removeFromFavorites);
 
 // Recommendations

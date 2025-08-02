@@ -213,18 +213,13 @@ export const userAPI = {
 
   updateEmail: async (emailData) => {
     const token = localStorage.getItem("token");
-    const encryptedData = {
-      ...emailData,
-      password: encryptPassword(emailData.password),
-    };
-
     return apiCall("/users/email", {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(encryptedData),
+      body: JSON.stringify(emailData),
     });
   },
 
@@ -232,6 +227,42 @@ export const userAPI = {
     const token = localStorage.getItem("token");
     return apiCall("/users/profile", {
       method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  // Favorites functions
+  getFavorites: async (params = {}) => {
+    const token = localStorage.getItem("token");
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/users/favorites${queryString ? `?${queryString}` : ''}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  addToFavorites: async (animeId) => {
+    const token = localStorage.getItem("token");
+    return apiCall("/users/favorites", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ animeId }),
+    });
+  },
+
+  removeFromFavorites: async (animeId) => {
+    const token = localStorage.getItem("token");
+    return apiCall(`/users/favorites/${animeId}`, {
+      method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
